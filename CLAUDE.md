@@ -38,6 +38,15 @@ packages/
 - **CHECK** COMPONENT_LIBRARY.md before creating new components
 - **REUSE** existing components - check if something similar exists
 
+### 5. Code Organization is Non-Negotiable
+- **FOLLOW** CODE_ORGANIZATION.md for ALL code placement decisions
+- **HOOKS** must live in `@ria/web-hooks` - no custom hooks elsewhere
+- **UTILITIES** must live in `@ria/utils` - no duplicate helper functions
+- **BUSINESS LOGIC** must live in `@ria/[module]-server` packages
+- **API CLIENTS** must live in `@ria/client` - centralized API communication
+- **TYPES** that are shared must live in `@ria/types` or be co-located
+- **NEVER** duplicate code - if you write it twice, you're doing it wrong
+
 ## Development Workflow
 
 ### Before Adding New Features
@@ -328,13 +337,21 @@ pnpm --filter @ria/finance-server test
 pnpm --filter @ria/web dev
 ```
 
-## Getting Help
+## Getting Help & Key Documents
 
 1. **Check module docs** in `docs/[module].md`
-2. **Review finance module** for implementation patterns
-3. **Look for similar features** in existing code
-4. **Check Prisma schema** for data relationships
-5. **Review this guide** for architectural decisions
+2. **Review CODE_ORGANIZATION.md** for where code should live
+3. **Check COMPONENT_LIBRARY.md** for UI components
+4. **Review finance module** for implementation patterns
+5. **Look for similar features** in existing code
+6. **Check Prisma schema** for data relationships
+7. **Review this guide** for architectural decisions
+
+## Critical Documents to Always Check
+
+- **CODE_ORGANIZATION.md** - Where every type of code belongs
+- **COMPONENT_LIBRARY.md** - All UI components and patterns
+- **CLAUDE.md** (this file) - Overall architecture and rules
 
 ## Remember
 
