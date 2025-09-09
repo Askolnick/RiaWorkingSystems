@@ -1,0 +1,11 @@
+{
+  "name": "@ria/workers",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node src/index.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "ts-node": "^10.9.1"
+  }
+}
