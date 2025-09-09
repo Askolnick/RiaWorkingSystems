@@ -25,11 +25,18 @@ apps/
 
 packages/
   [module]-server/  → Business logic for each module
-  web-ui/          → Shared UI components
+  web-ui/          → Shared UI components (ALL UI COMPONENTS MUST LIVE HERE)
   db/              → Database schema and migrations
   client/          → Shared client utilities
   utils/           → Common helpers
 ```
+
+### 4. Component Library is Mandatory
+- **NEVER** create UI components directly in apps/web
+- **ALWAYS** define components in packages/web-ui first
+- **IMPORT** all components from `@ria/web-ui`
+- **CHECK** COMPONENT_LIBRARY.md before creating new components
+- **REUSE** existing components - check if something similar exists
 
 ## Development Workflow
 
@@ -195,6 +202,9 @@ packages/[module]-server/
 6. **Ignoring the design system** and creating custom styles
 7. **Adding features without considering mobile UX**
 8. **Implementing complex features without progressive enhancement**
+9. **Creating duplicate UI components** instead of using @ria/web-ui
+10. **Hardcoding styles** instead of using design tokens
+11. **Building complex components** instead of composing simple ones
 
 ## Progressive Enhancement Strategy
 
@@ -265,6 +275,31 @@ import { createInvoice } from '@ria/finance-server';
 - **Keep business logic in packages** (not in UI)
 - **Document architectural decisions** in ADRs
 
+## Component Development Workflow
+
+### Before Creating Any UI Element
+1. **Check Component Library** - Look in packages/web-ui/COMPONENT_LIBRARY.md
+2. **Search Existing Components** - Something similar might already exist
+3. **Compose First** - Try combining existing components before creating new ones
+4. **Design System Only** - Use only colors/spacing from design tokens
+
+### Component Creation Process
+```bash
+# 1. Check if component exists
+grep -r "ComponentName" packages/web-ui/src/
+
+# 2. If not, create in web-ui package
+mkdir packages/web-ui/src/ComponentName
+touch packages/web-ui/src/ComponentName/ComponentName.tsx
+touch packages/web-ui/src/ComponentName/ComponentName.stories.tsx
+
+# 3. Export from index
+echo "export * from './ComponentName/ComponentName';" >> packages/web-ui/src/index.ts
+
+# 4. Use in app
+# import { ComponentName } from '@ria/web-ui';
+```
+
 ## Quick Commands
 
 ```bash
@@ -282,6 +317,11 @@ pnpm format             # Prettier format
 pnpm db:migrate         # Run migrations
 pnpm db:seed            # Seed dev data
 pnpm db:reset           # Reset database
+
+# Component Library
+pnpm --filter @ria/web-ui storybook  # Start Storybook
+pnpm --filter @ria/web-ui test       # Test components
+pnpm --filter @ria/web-ui build      # Build component library
 
 # Module-specific
 pnpm --filter @ria/finance-server test
