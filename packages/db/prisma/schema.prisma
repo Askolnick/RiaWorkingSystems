@@ -875,3 +875,113 @@ model JournalLine {
   @@index([tenantId, accountId])
   @@map("journal_lines")
 }
+
+// -----------------------------------------------------------------------------
+// Library and Knowledge Management
+//
+// These models support the Library Centre for managing documents, sections,
+// and publishing controls. Designed to support reusable sections, doc
+// transclusion, tagging, and rich publishing controls.
+
+enum DocKind {
+  wiki
+  spec
+  policy
+  howto
+  memo
+  brief
+}
+
+enum DocStatus {
+  draft
+  review
+  scheduled
+  published
+  archived
+}
+
+enum PublishScope {
+  private
+  users
+  groups
+  internal
+  clients
+  public
+}
+
+model LibraryDoc {
+  id         String    @id @db.Uuid
+  tenantId   String    @db.Uuid
+  title      String
+  slug       String?
+  kind       DocKind   @default(wiki)
+  status     DocStatus @default(draft)
+  ownerId    String?   @db.Uuid        // Membership id
+  tags       String[]  @db.Text
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  // current content pointer (optional – use snapshots in Section if you prefer CRDT elsewhere)
+  bodyMd     String?   // canonical markdown
+  bodyTypist Json?     // rich blocks (Typist JSON)
+
+  sections   DocSectionLink[]
+  publishes  DocPublish[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, kind])
+  @@index([tenantId, tags], type: Gin)
+  @@unique([tenantId, slug])
+  @@map("library_docs")
+}
+
+model LibrarySection {
+  id        String   @id @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  bodyMd    String?
+  bodyTypist Json?
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usedBy    DocSectionLink[]
+
+  @@unique([tenantId, name, version])
+  @@index([tenantId, name])
+  @@map("library_sections")
+}
+
+// Many-to-many (ordered) – sections embedded in docs with optional parameters
+model DocSectionLink {
+  id         String   @id @db.Uuid
+  tenantId   String   @db.Uuid
+  docId      String   @db.Uuid
+  sectionId  String   @db.Uuid
+  position   Int      @default(0)
+  params     Json?    // e.g., showTitle: true, outlineLevel: 2
+  createdAt  DateTime @default(now())
+
+  doc     LibraryDoc    @relation(fields: [docId], references: [id], onDelete: Cascade)
+  section LibrarySection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, docId, position])
+  @@map("doc_section_links")
+}
+
+model DocPublish {
+  id        String       @id @db.Uuid
+  tenantId  String       @db.Uuid
+  docId     String       @db.Uuid
+  scope     PublishScope
+  userIds   String[]     @db.Text // specific users
+  groupIds  String[]     @db.Text // specific groups
+  urlPath   String?      // public/client permalink (if public/clients)
+  createdAt DateTime     @default(now())
+
+  doc LibraryDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, scope])
+  @@map("doc_publishes")
+}

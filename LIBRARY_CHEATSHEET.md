@@ -2,18 +2,33 @@
 
 ## Quick Import Reference
 ```typescript
-import { Button, Card, Badge, Stack, Input, Select, FormField } from '@ria/web-ui';
+// UI Components (12 available!)
+import { 
+  Button, Card, Badge, Stack, Input, Select, FormField,
+  Avatar, Modal, Tag, Textarea, Toast
+} from '@ria/web-ui';
+
+// Utilities
 import { cn, formatMoney, entityRef } from '@ria/utils';
-import { useDisclosure, useIdempotentMutation } from '@ria/web-hooks';
+
+// Hooks
+import { useDisclosure, useIdempotentMutation, useToast } from '@ria/web-hooks';
+
+// Client APIs
+import { auth, library, links } from '@ria/client';
+
+// Database
 import { prisma } from '@ria/db';
-import type { Invoice, Payment, User } from '@ria/types';
+
+// Types
+import type { Invoice, Payment, User, Session } from '@ria/types';
 ```
 
 ---
 
 ## 🎨 UI Components (`@ria/web-ui`)
 
-### ✅ READY TO USE
+### ✅ READY TO USE (12 Components!)
 
 #### Button
 ```tsx
@@ -167,6 +182,132 @@ import { Stack } from '@ria/web-ui';
 // Justify options: start, center, end, between, around, evenly
 ```
 
+#### Avatar
+```tsx
+import { Avatar } from '@ria/web-ui';
+
+// Basic avatar with image
+<Avatar src="/user-photo.jpg" alt="John Doe" />
+
+// With fallback initials
+<Avatar src="/user-photo.jpg" alt="John Doe" fallback="JD" />
+
+// Without image (initials only)
+<Avatar fallback="JD" />
+
+// Sizes
+<Avatar size="sm" fallback="JD" />  // 32px
+<Avatar size="md" fallback="JD" />  // 40px (default)
+<Avatar size="lg" fallback="JD" />  // 48px
+<Avatar size="xl" fallback="JD" />  // 64px
+```
+
+#### Modal
+```tsx
+import { Modal } from '@ria/web-ui';
+
+// Basic modal
+<Modal isOpen={isOpen} onClose={handleClose}>
+  <h2>Modal Title</h2>
+  <p>Modal content goes here</p>
+</Modal>
+
+// With different sizes
+<Modal isOpen={isOpen} onClose={handleClose} size="sm">
+<Modal isOpen={isOpen} onClose={handleClose} size="md">  // default
+<Modal isOpen={isOpen} onClose={handleClose} size="lg">
+<Modal isOpen={isOpen} onClose={handleClose} size="xl">
+<Modal isOpen={isOpen} onClose={handleClose} size="full">
+
+// With close on backdrop click disabled
+<Modal isOpen={isOpen} onClose={handleClose} closeOnBackdropClick={false}>
+```
+
+#### Tag
+```tsx
+import { Tag } from '@ria/web-ui';
+
+// Basic tag
+<Tag>JavaScript</Tag>
+
+// With remove button
+<Tag onRemove={() => handleRemove(id)}>React</Tag>
+
+// Variants
+<Tag variant="default">Default</Tag>
+<Tag variant="primary">Primary</Tag>
+<Tag variant="secondary">Secondary</Tag>
+<Tag variant="success">Success</Tag>
+<Tag variant="warning">Warning</Tag>
+<Tag variant="danger">Danger</Tag>
+
+// Sizes
+<Tag size="sm">Small</Tag>
+<Tag size="md">Medium</Tag>
+<Tag size="lg">Large</Tag>
+```
+
+#### Textarea
+```tsx
+import { Textarea } from '@ria/web-ui';
+
+// Basic textarea
+<Textarea placeholder="Enter description..." />
+
+// With rows
+<Textarea rows={5} placeholder="Enter message..." />
+
+// With error state
+<Textarea variant="error" placeholder="Required field" />
+
+// Sizes
+<Textarea size="sm" />
+<Textarea size="md" />  // default
+<Textarea size="lg" />
+
+// Controlled
+<Textarea value={value} onChange={(e) => setValue(e.target.value)} />
+```
+
+#### Toast
+```tsx
+import { ToastProvider, useToast } from '@ria/web-ui';
+
+// Wrap your app with ToastProvider
+function App() {
+  return (
+    <ToastProvider>
+      <YourApp />
+    </ToastProvider>
+  );
+}
+
+// Use in components
+function MyComponent() {
+  const { toast } = useToast();
+  
+  // Show different toast types
+  toast({
+    title: "Success!",
+    description: "Your changes have been saved.",
+    variant: "success",
+  });
+  
+  toast({
+    title: "Error",
+    description: "Something went wrong.",
+    variant: "error",
+  });
+  
+  // Auto-dismiss after custom duration (ms)
+  toast({
+    title: "Info",
+    description: "This will disappear in 3 seconds",
+    duration: 3000,
+  });
+}
+```
+
 ### 🔄 PLANNED COMPONENTS (Not Yet Implemented)
 
 ```typescript
@@ -313,6 +454,92 @@ import { debounce, throttle, memoize } from '@ria/utils/performance';
 
 // Crypto
 import { hash, encrypt, generateToken } from '@ria/utils/crypto';
+```
+
+---
+
+## 🔌 Client APIs (`@ria/client`)
+
+### ✅ READY TO USE
+
+#### Authentication API
+```typescript
+import { auth } from '@ria/client';
+
+// Sign in
+const { user, session } = await auth.signIn({
+  email: 'user@example.com',
+  password: 'password123'
+});
+
+// Sign up
+const { user, session } = await auth.signUp({
+  name: 'John Doe',
+  email: 'john@example.com',
+  password: 'securePassword123'
+});
+
+// Sign out
+await auth.signOut();
+
+// Get current session
+const session = await auth.getSession();
+
+// Refresh token
+const newSession = await auth.refreshToken(currentToken);
+```
+
+#### Library API
+```typescript
+import { library } from '@ria/client';
+
+// Get all documents
+const docs = await library.getDocs();
+
+// Get single document
+const doc = await library.getDoc('doc-id');
+
+// Create document
+const newDoc = await library.createDoc({
+  title: 'New Document',
+  content: 'Document content...',
+  kind: 'wiki',
+  tags: ['tutorial', 'guide']
+});
+
+// Update document
+await library.updateDoc('doc-id', { 
+  title: 'Updated Title' 
+});
+
+// Publish document
+await library.publishDoc('doc-id', {
+  scope: 'public',
+  allowedGroups: ['team-1']
+});
+```
+
+#### Entity Linking API
+```typescript
+import { links } from '@ria/client';
+
+// Create a link between entities
+await links.createLink({
+  fromEntity: { kind: 'Task', id: 'task-123' },
+  toEntity: { kind: 'Invoice', id: 'inv-456' },
+  linkKind: 'relates'
+});
+
+// Get links for an entity
+const entityLinks = await links.getLinks('Task', 'task-123');
+
+// Get related entities
+const related = await links.getRelated('Invoice', 'inv-456');
+
+// Remove a link
+await links.removeLink('link-id');
+
+// Link types: relates, blocks, depends, duplicates, references
 ```
 
 ---

@@ -21,6 +21,7 @@ export * from './Navigation/Navigation';
 export * from './Table/Table';
 export * from './Badge/Badge';
 export * from './Avatar/Avatar';
+export * from './Tag/Tag';
 export * from './List/List';
 export * from './Stat/Stat';
 
