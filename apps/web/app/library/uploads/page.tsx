@@ -135,9 +135,10 @@ export default function UploadsPage() {
         
         {filesError && (
           <ErrorAlert 
-            message={filesError}
             className="mb-6"
-          />
+          >
+            {filesError}
+          </ErrorAlert>
         )}
         
         {filesLoading ? (

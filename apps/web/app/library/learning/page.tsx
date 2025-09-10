@@ -67,9 +67,10 @@ export default function LearningPage() {
         
         {coursesError && (
           <ErrorAlert 
-            message={coursesError}
             className="mb-6"
-          />
+          >
+            {coursesError}
+          </ErrorAlert>
         )}
         
         {coursesLoading ? (

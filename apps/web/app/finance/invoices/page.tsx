@@ -164,7 +164,7 @@ export default function FinanceInvoicesPage() {
               />
             </div>
             <div className="w-full sm:w-48">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="all">All Status</option>
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>

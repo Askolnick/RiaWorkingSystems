@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes, forwardRef } from 'react';
 import { Spinner } from './Loading';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'link' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'link' | 'outline' | 'success';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
@@ -35,6 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
       secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
       danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+      success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
       ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-500',
       link: 'bg-transparent underline-offset-4 hover:underline text-blue-600 focus:ring-blue-500',
       outline: 'bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
@@ -64,7 +65,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && iconPosition === 'left' && (
-          <Spinner size="sm" color={variant === 'primary' || variant === 'danger' ? 'white' : 'primary'} className="mr-2" />
+          <Spinner size="sm" color={variant === 'primary' || variant === 'danger' || variant === 'success' ? 'white' : 'primary'} className="mr-2" />
         )}
         {!loading && icon && iconPosition === 'left' && (
           <span className="mr-2">{icon}</span>
@@ -74,7 +75,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <span className="ml-2">{icon}</span>
         )}
         {loading && iconPosition === 'right' && (
-          <Spinner size="sm" color={variant === 'primary' || variant === 'danger' ? 'white' : 'primary'} className="ml-2" />
+          <Spinner size="sm" color={variant === 'primary' || variant === 'danger' || variant === 'success' ? 'white' : 'primary'} className="ml-2" />
         )}
       </button>
     );
