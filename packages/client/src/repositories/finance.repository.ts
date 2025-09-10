@@ -156,13 +156,15 @@ export class InvoiceRepository extends BaseRepository<Invoice, CreateInvoiceDTO,
   private mockData: Invoice[] = generateMockInvoices();
 
   async findAll() {
-    // Return mock data for development
+    // Return mock data for development  
+    const pageSize = 10;
+    const totalPages = Math.ceil(this.mockData.length / pageSize);
     return {
       data: this.mockData,
       total: this.mockData.length,
       page: 1,
-      pageSize: 10,
-      totalPages: 1,
+      limit: pageSize,
+      hasMore: 1 < totalPages,
     };
   }
 
@@ -205,12 +207,14 @@ export class TransactionRepository extends BaseRepository<Transaction, CreateTra
 
   async findAll() {
     // Return mock data for development
+    const pageSize = 10;
+    const totalPages = Math.ceil(this.mockData.length / pageSize);
     return {
       data: this.mockData,
       total: this.mockData.length,
       page: 1,
-      pageSize: 10,
-      totalPages: 1,
+      limit: pageSize,
+      hasMore: 1 < totalPages,
     };
   }
 

@@ -221,8 +221,8 @@ export class FileRepository extends BaseRepository<UploadedFile, CreateFileDTO, 
       data: filteredData,
       total: filteredData.length,
       page: 1,
-      pageSize: filteredData.length,
-      totalPages: 1,
+      limit: Math.min(10, filteredData.length),
+      hasMore: false,
     };
   }
 
@@ -297,8 +297,8 @@ export class FolderRepository extends BaseRepository<Folder, CreateFolderDTO, Up
       data: this.mockData,
       total: this.mockData.length,
       page: 1,
-      pageSize: this.mockData.length,
-      totalPages: 1,
+      limit: Math.min(10, this.mockData.length),
+      hasMore: false,
     };
   }
 

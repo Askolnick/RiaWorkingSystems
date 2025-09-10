@@ -159,12 +159,14 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseDTO, Up
 
   async findAll() {
     // Return mock data for development
+    const pageSize = 10;
+    const totalPages = Math.ceil(this.mockData.length / pageSize);
     return {
       data: this.mockData,
       total: this.mockData.length,
       page: 1,
-      pageSize: 10,
-      totalPages: 1,
+      limit: pageSize,
+      hasMore: 1 < totalPages,
     };
   }
 
