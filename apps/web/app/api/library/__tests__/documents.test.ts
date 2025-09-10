@@ -14,7 +14,14 @@ jest.mock('@ria/db', () => ({
 
 import { prisma } from '@ria/db';
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+// Properly type the mocked Prisma client
+const mockPrisma = prisma as {
+  libraryDoc: {
+    findMany: jest.MockedFunction<typeof prisma.libraryDoc.findMany>;
+    count: jest.MockedFunction<typeof prisma.libraryDoc.count>;
+    create: jest.MockedFunction<typeof prisma.libraryDoc.create>;
+  };
+};
 
 describe('/api/library/documents', () => {
   beforeEach(() => {

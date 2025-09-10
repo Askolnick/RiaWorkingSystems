@@ -14,7 +14,7 @@ import type {
   UpdateInvoiceDTO,
   CreateTransactionDTO,
   UpdateTransactionDTO
-} from '../types/finance.types';
+} from '../types';
 
 interface FinanceStore {
   // Invoices
