@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Input, Button } from '@ria/web-ui';
 import { auth } from '@ria/client';
+import { ROUTES } from '@ria/utils';
 
 // Enhanced sign-up page using shared Input and Button components.
 // The auth client persists sessions for demonstration.
@@ -19,7 +20,7 @@ export default function SignUpPage() {
   useEffect(() => {
     auth.getSession().then((session) => {
       if (session) {
-        router.replace('/portal');
+        router.push(ROUTES.PORTAL as any);
       }
     });
   }, [router]);
@@ -31,7 +32,7 @@ export default function SignUpPage() {
     
     try {
       await auth.signUp(email, password, name);
-      router.replace('/portal');
+      router.push(ROUTES.PORTAL as any);
     } catch (err) {
       setError('Unable to create account. Please try again.');
     } finally {
@@ -127,7 +128,7 @@ export default function SignUpPage() {
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
             <Link
-              href="/auth/sign-in"
+              href={ROUTES.SIGN_IN}
               className="font-medium text-theme hover:text-theme/80"
             >
               Sign in

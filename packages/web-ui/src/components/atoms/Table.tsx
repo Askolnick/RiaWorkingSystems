@@ -1,0 +1,238 @@
+'use client';
+
+import React from 'react';
+
+interface Column<T> {
+  key: keyof T | string;
+  title: string;
+  render?: (value: any, record: T, index: number) => React.ReactNode;
+  sortable?: boolean;
+  width?: string | number;
+  align?: 'left' | 'center' | 'right';
+}
+
+interface TableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  loading?: boolean;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number) => void;
+  };
+  onSort?: (key: string, direction: 'asc' | 'desc') => void;
+  rowKey?: keyof T | ((record: T) => string | number);
+  onRow?: (record: T, index: number) => {
+    onClick?: () => void;
+    className?: string;
+  };
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
+  bordered?: boolean;
+  striped?: boolean;
+}
+
+/**
+ * Data table component with sorting, pagination, and custom rendering
+ */
+export function Table<T extends Record<string, any>>({
+  data,
+  columns,
+  loading = false,
+  pagination,
+  onSort,
+  rowKey = 'id',
+  onRow,
+  className = '',
+  size = 'md',
+  bordered = true,
+  striped = true,
+}: TableProps<T>) {
+  const [sortState, setSortState] = React.useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
+  const handleSort = (key: string) => {
+    if (!onSort) return;
+
+    const newDirection = sortState?.key === key && sortState.direction === 'asc' ? 'desc' : 'asc';
+    setSortState({ key, direction: newDirection });
+    onSort(key, newDirection);
+  };
+
+  const getRowKey = (record: T, index: number) => {
+    if (typeof rowKey === 'function') {
+      return rowKey(record);
+    }
+    return record[rowKey] ?? index;
+  };
+
+  const sizeClasses = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
+  };
+
+  const cellPadding = {
+    sm: 'px-3 py-2',
+    md: 'px-4 py-3',
+    lg: 'px-6 py-4',
+  };
+
+  if (loading) {
+    return (
+      <div className={`animate-pulse ${className}`}>
+        <div className="bg-gray-200 h-10 mb-2 rounded"></div>
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-gray-100 h-8 mb-1 rounded"></div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`overflow-x-auto ${className}`}>
+      <table className={`min-w-full ${sizeClasses[size]} ${bordered ? 'border border-gray-200' : ''}`}>
+        <thead className="bg-gray-50">
+          <tr>
+            {columns.map((column, index) => (
+              <th
+                key={String(column.key)}
+                className={`
+                  ${cellPadding[size]}
+                  text-left font-medium text-gray-900 uppercase tracking-wider
+                  ${bordered ? 'border-b border-gray-200' : ''}
+                  ${column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''}
+                  ${column.align === 'center' ? 'text-center' : ''}
+                  ${column.align === 'right' ? 'text-right' : ''}
+                `}
+                style={{ width: column.width }}
+                onClick={() => column.sortable && handleSort(String(column.key))}
+              >
+                <div className="flex items-center gap-1">
+                  {column.title}
+                  {column.sortable && (
+                    <span className="text-gray-400">
+                      {sortState?.key === column.key ? (
+                        sortState.direction === 'asc' ? '↑' : '↓'
+                      ) : (
+                        '↕'
+                      )}
+                    </span>
+                  )}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {data.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className={`${cellPadding[size]} text-center text-gray-500`}
+              >
+                No data available
+              </td>
+            </tr>
+          ) : (
+            data.map((record, index) => {
+              const rowProps = onRow?.(record, index) || {};
+              return (
+                <tr
+                  key={getRowKey(record, index)}
+                  className={`
+                    ${striped && index % 2 === 1 ? 'bg-gray-50' : ''}
+                    ${rowProps.onClick ? 'cursor-pointer hover:bg-gray-100' : ''}
+                    ${rowProps.className || ''}
+                  `}
+                  onClick={rowProps.onClick}
+                >
+                  {columns.map((column) => {
+                    const value = record[column.key as keyof T];
+                    const cellContent = column.render
+                      ? column.render(value, record, index)
+                      : value?.toString() || '';
+
+                    return (
+                      <td
+                        key={String(column.key)}
+                        className={`
+                          ${cellPadding[size]}
+                          whitespace-nowrap
+                          ${bordered ? 'border-b border-gray-200' : ''}
+                          ${column.align === 'center' ? 'text-center' : ''}
+                          ${column.align === 'right' ? 'text-right' : ''}
+                        `}
+                      >
+                        {cellContent}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+
+      {pagination && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+          <div className="flex justify-between flex-1 sm:hidden">
+            <button
+              onClick={() => pagination.onPageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+              className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => pagination.onPageChange(pagination.page + 1)}
+              disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
+              className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing{' '}
+                <span className="font-medium">
+                  {(pagination.page - 1) * pagination.pageSize + 1}
+                </span>{' '}
+                to{' '}
+                <span className="font-medium">
+                  {Math.min(pagination.page * pagination.pageSize, pagination.total)}
+                </span>{' '}
+                of <span className="font-medium">{pagination.total}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => pagination.onPageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => pagination.onPageChange(pagination.page + 1)}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default Table;

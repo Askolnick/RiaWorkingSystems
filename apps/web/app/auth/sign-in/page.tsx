@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Input, Button } from '@ria/web-ui';
 import { auth } from '@ria/client';
+import { ROUTES } from '@ria/utils';
 
 // Enhanced sign-in page that uses the shared Input and Button components.
 // It uses the auth client to persist sessions. If a session
@@ -20,7 +21,7 @@ export default function SignInPage() {
   useEffect(() => {
     auth.getSession().then((session) => {
       if (session) {
-        router.replace('/portal');
+        router.push(ROUTES.PORTAL as any);
       }
     });
   }, [router]);
@@ -32,7 +33,7 @@ export default function SignInPage() {
     
     try {
       await auth.signIn(email, password);
-      router.replace('/portal');
+      router.push(ROUTES.PORTAL as any);
     } catch (err) {
       setError('Invalid email or password');
     } finally {
@@ -47,6 +48,14 @@ export default function SignInPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
+          <div className="mt-4 p-4 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-800 text-center">
+              <strong>Test Credentials:</strong> Use any email/password combination to sign in (demo mode)
+            </p>
+            <p className="text-xs text-blue-600 text-center mt-1">
+              Example: test@example.com / password123
+            </p>
+          </div>
         </div>
         {error && (
           <div className="rounded-md bg-red-50 p-4">
@@ -109,7 +118,7 @@ export default function SignInPage() {
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
             <Link
-              href="/auth/sign-up"
+              href={ROUTES.SIGN_UP}
               className="font-medium text-theme hover:text-theme/80"
             >
               Sign up

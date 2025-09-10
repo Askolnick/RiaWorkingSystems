@@ -1,5 +1,9 @@
-// packages/db/prisma/schema.prisma
-// Prisma schema for Ria Living Systems — Core Models (v0.3)
+// =============================================================
+// Ria Living Systems — Unified Prisma Schema (PostgreSQL)
+// Multi-tenant; clean relations; generic linking/tagging;
+// RBAC, Notifications/Activity; Files; Messaging; Tasks; Library;
+// FTS-ready columns (manual SQL indexes below).
+///////////////////////////////////////////////////////////////
 
 generator client {
   provider = "prisma-client-js"
@@ -10,878 +14,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+// -------------------- Enums --------------------
+
+enum RoleName {
   super_admin
   admin
   moderator
   member
   guest
-  client_admin
-  client_member
-  client_viewer
-  client_guest
-}
-
-enum Visibility {
-  internal
   client
-  public
 }
 
-enum TaskStatus {
-  todo
-  doing
-  blocked
-  done
-  archived
+enum PermissionAction {
+  read
+  write
+  update
+  delete
+  admin
 }
 
-enum IssueType {
-  task
-  bug
-  feature
+enum LinkKind {
+  references
+  duplicates
+  relates
+  depends_on
+  blocked_by
 }
-
-enum InvoiceStatus {
-  draft
-  open
-  paid
-  void
-  uncollectible
-}
-
-enum FinancialDocKind {
-  receipt
-  invoice_pdf
-  bank_statement
-  contract
-  other
-}
-
-enum PostStatus {
-  draft
-  review
-  scheduled
-  published
-}
-
-enum VoteKind {
-  standard
-  referenced
-  expert
-  expert_referenced
-}
-
-model Organization {
-  id         String   @id @db.Uuid
-  name       String
-  slug       String   @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  memberships Membership[]
-  projects     Project[]
-  contacts     Contact[]
-  products     Product[]
-  posts        Post[]
-
-  @@map("organizations")
-}
-
-model User {
-  id         String   @id @db.Uuid
-  email      String   @unique
-  name       String?
-  avatarUrl  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  memberships Membership[]
-
-  @@map("users")
-}
-
-model Membership {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  userId    String   @db.Uuid
-  role      Role
-  createdAt DateTime @default(now())
-
-  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org   Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, userId])
-  @@map("memberships")
-}
-
-model Project {
-  id          String     @id @db.Uuid
-  tenantId    String     @db.Uuid
-  name        String
-  key         String?
-  description String?
-  visibility  Visibility  @default(internal)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
-
-  tasks Task[]
-
-  organization Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([tenantId, visibility])
-  @@map("projects")
-}
-
-model Task {
-  id          String     @id @db.Uuid
-  tenantId    String     @db.Uuid
-  projectId   String?
-  title       String
-  type        IssueType  @default(task)
-  status      TaskStatus @default(todo)
-  description String?
-  reporterMembershipId String? @db.Uuid
-  tags        String[]
-  dueAt       DateTime?
-  priority    Int         @default(0)
-  points      Int?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
-
-  project  Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  reporter Membership? @relation(fields: [reporterMembershipId], references: [id], onDelete: SetNull)
-  assignees TaskAssignee[]
-
-  @@index([tenantId, projectId, status])
-  @@index([tenantId, dueAt])
-  @@index([tenantId, tags], type: Gin)
-  @@map("tasks")
-}
-
-model TaskAssignee {
-  id           String   @id @db.Uuid
-  tenantId     String   @db.Uuid
-  taskId       String   @db.Uuid
-  membershipId String   @db.Uuid
-  assignedAt   DateTime @default(now())
-
-  task       Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, taskId, membershipId])
-  @@index([tenantId, membershipId])
-  @@index([tenantId, taskId])
-  @@map("task_assignees")
-}
-
-model Contact {
-  id         String   @id @db.Uuid
-  tenantId   String   @db.Uuid
-  name       String?
-  emails     String[]
-  phones     String[]
-  company    String?
-  attrs      Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  organization Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([tenantId, emails], type: Gin)
-  @@map("contacts")
-}
-
-model Invoice {
-  id          String        @id @db.Uuid
-  tenantId    String        @db.Uuid
-  customerId  String        @db.Uuid
-  number      String?
-  totalCents  Int
-  currency    String        @default("USD")
-  status      InvoiceStatus @default(draft)
-  issuedAt    DateTime?
-  dueAt       DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
-
-  customer Contact @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, customerId])
-  @@index([tenantId, status])
-  @@map("invoices")
-}
-
-model Expense {
-  id           String   @id @db.Uuid
-  tenantId     String   @db.Uuid
-  projectId    String?
-  vendorId     String?
-  amountCents  Int
-  currency     String   @default("USD")
-  description  String?
-  bookedAt     DateTime @default(now())
-  invoiceId    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  vendor  Contact? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, bookedAt])
-  @@index([tenantId, projectId])
-  @@map("expenses")
-}
-
-model FinancialDocument {
-  id              String            @id @db.Uuid
-  tenantId        String            @db.Uuid
-  kind            FinancialDocKind
-  objectKey       String            // S3/R2 key
-  contentType     String?
-  ocr             Json?
-  parsed          Json?
-  matchConfidence Float?
-  linkedTo        String[]          // array of EntityRef strings (type:id)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  @@index([tenantId])
-  @@index([tenantId, kind])
-  @@map("financial_documents")
-}
-
-model EmailThread {
-  id           String   @id @db.Uuid
-  tenantId     String   @db.Uuid
-  subject      String
-  participants String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  messages EmailMessage[]
-
-  @@index([tenantId])
-  @@map("email_threads")
-}
-
-model EmailMessage {
-  id          String   @id @db.Uuid
-  tenantId    String   @db.Uuid
-  threadId    String   @db.Uuid
-  messageId   String   @unique
-  headers     Json
-  text        String?
-  html        String?
-  attachments String[]
-  createdAt   DateTime @default(now())
-
-  thread EmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, threadId, createdAt])
-  @@map("email_messages")
-}
-
-model WikiPage {
-  id         String     @id @db.Uuid
-  tenantId   String     @db.Uuid
-  title      String
-  status     PostStatus  @default(draft)
-  visibility Visibility  @default(internal)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-
-  blocks WikiBlockSnapshot[]
-
-  @@index([tenantId, visibility, status])
-  @@map("wiki_pages")
-}
-
-model WikiBlockSnapshot {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  pageId    String   @db.Uuid
-  version   Int
-  ydoc      Bytes
-  createdAt DateTime @default(now())
-
-  page WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-
-  @@unique([pageId, version])
-  @@index([tenantId, pageId])
-  @@map("wiki_block_snapshots")
-}
-
-model Post {
-  id          String     @id @db.Uuid
-  tenantId    String     @db.Uuid
-  slug        String     @unique
-  title       String
-  status      PostStatus @default(draft)
-  visibility  Visibility @default(public)
-  publishedAt DateTime?
-  blocksRef   String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  @@index([tenantId, visibility, status])
-  @@map("posts")
-}
-
-model Product {
-  id         String   @id @db.Uuid
-  tenantId   String   @db.Uuid
-  name       String
-  sku        String?
-  attrs      Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([tenantId])
-  @@map("products")
-}
-
-model EntityLink {
-  id        String  @id @db.Uuid
-  tenantId  String  @db.Uuid
-  aType     String
-  aId       String
-  bType     String
-  bId       String
-  rel       String
-  createdByMembershipId String   @db.Uuid
-  createdAt DateTime @default(now())
-
-  createdBy Membership @relation(fields: [createdByMembershipId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, aType, aId])
-  @@index([tenantId, bType, bId])
-  @@index([tenantId, rel])
-  @@map("entity_links")
-}
-
-model Vote {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  itemType  String
-  itemId    String
-  voterMembershipId String @db.Uuid
-  kind      VoteKind
-  weight    Int      @default(1)
-  refUrl    String?
-  createdAt DateTime @default(now())
-
-  voter Membership @relation(fields: [voterMembershipId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, itemType, itemId, voterMembershipId])
-  @@index([tenantId, itemType, itemId])
-  @@map("votes")
-}
-
-model Mention {
-  id          String   @id @db.Uuid
-  tenantId    String   @db.Uuid
-  sourceType  String
-  sourceId    String
-  targetType  String
-  targetId    String
-  context     String?
-  createdAt   DateTime @default(now())
-
-  @@index([tenantId, targetType, targetId])
-  @@index([tenantId, sourceType, sourceId])
-  @@map("mentions")
-}
-
-// ---------------------------
-// Finance & Accounting Models
-//
-// The following models extend the core schema to support a full accounting
-// ledger, vendor bills, payments and AI‑assisted posting. They are
-// intentionally simple for an MVP, but can be extended with multi‑currency,
-// recurring transactions, bank feed imports and more.
-
-enum BillStatus {
-  draft
-  open
-  paid
-  void
-  uncollectible
-}
-
-enum AccountType {
-  asset
-  liability
-  equity
-  revenue
-  expense
-}
-
-model Bill {
-  id        String     @id @db.Uuid
-  tenantId  String     @db.Uuid
-  vendorId  String     @db.Uuid
-  number    String?
-  totalCents Int
-  currency  String     @default("USD")
-  status    BillStatus @default(draft)
-  issuedAt  DateTime?
-  dueAt     DateTime?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  deletedAt DateTime?
-
-  vendor Contact @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, vendorId])
-  @@index([tenantId, status])
-  @@map("bills")
-}
-
-model BillLine {
-  id           String  @id @db.Uuid
-  billId       String  @db.Uuid
-  description  String
-  quantity     Int
-  unitPriceCents Int
-  totalCents   Int
-
-  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
-
-  @@index([billId])
-  @@map("bill_lines")
-}
-
-model Payment {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  invoiceId String?
-  billId    String?
-  amountCents Int
-  currency String   @default("USD")
-  paidAt    DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  bill   Bill?    @relation(fields: [billId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, invoiceId])
-  @@index([tenantId, billId])
-  @@map("payments")
-}
-
-model Account {
-  id       String   @id @db.Uuid
-  tenantId String   @db.Uuid
-  code     String
-  name     String
-  type     AccountType
-  parentId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  parent   Account?  @relation("AccountParent", fields: [parentId], references: [id], onDelete: SetNull)
-  children Account[] @relation("AccountParent")
-
-  @@unique([tenantId, code])
-  @@index([tenantId, type])
-  @@map("accounts")
-}
-
-model JournalEntry {
-  id       String   @id @db.Uuid
-  tenantId String   @db.Uuid
-  date     DateTime
-  memo     String?
-  createdAt DateTime @default(now())
-
-  lines JournalLine[]
-
-  @@index([tenantId, date])
-  @@map("journal_entries")
-}
-
-model JournalLine {
-  id        String   @id @db.Uuid
-  entryId   String   @db.Uuid
-  accountId String   @db.Uuid
-  debitCents  Int
-  creditCents Int
-  createdAt DateTime @default(now())
-
-  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  account Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-
-  @@index([entryId])
-  @@index([accountId])
-  @@map("journal_lines")
-}
-
-// Policies and AI‑assisted posting
-model PostingPolicy {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  name      String
-  pattern   Json
-  result    Json
-  priority  Int      @default(100)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([tenantId, isActive])
-  @@map("posting_policies")
-}
-
-model AISuggestion {
-  id          String   @id @db.Uuid
-  tenantId    String   @db.Uuid
-  sourceType  String
-  sourceId    String
-  suggestion  Json
-  confidence  Decimal   @db.Decimal(5, 4)
-  rationale   String?
-  features    Json
-  modelName   String
-  status      String
-  createdAt   DateTime  @default(now())
-  decidedAt   DateTime?
-  decidedBy   String?
-  auditRef    String?
-
-  @@index([tenantId, sourceType, sourceId])
-  @@map("ai_suggestions")
-}
-
-model BankLineLink {
-  id         String   @id @db.Uuid
-  tenantId   String   @db.Uuid
-  bankLineId String   @db.Uuid
-  targetType String
-  targetId   String
-  linkType   String
-  amountCents Int
-  createdAt  DateTime  @default(now())
-
-  @@index([tenantId, bankLineId])
-  @@map("bank_line_links")
-}
-
-model PromptLog {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  modelName String
-  prompt    String
-  response  String
-  tokensIn  Int
-  tokensOut Int
-  latencyMs Int
-  createdAt DateTime @default(now())
-
-  @@index([tenantId, modelName, createdAt])
-  @@map("prompt_logs")
-}
-
-
-model Outbox {
-  id          BigInt   @id @default(autoincrement())
-  tenantId    String   @db.Uuid
-  topic       String
-  payload     Json
-  createdAt   DateTime @default(now())
-  processedAt DateTime?
-
-  @@index([tenantId, topic, createdAt])
-  @@map("outbox")
-}
-
-// ---------------------------------------------
-// Additional enums and models for publishing and cohorts
-
-/// Defines the set of audiences available when publishing docs or sections
-enum AudienceKind {
-  only_me
-  users
-  groups
-  internal_all
-  clients_all
-  public
-}
-
-/// Represents a user-defined group within a tenant (e.g., engineers, admins)
-model Group {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  slug      String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members   GroupMembership[]
-
-  @@unique([tenantId, slug])
-  @@index([tenantId])
-  @@map("groups")
-}
-
-/// Associates a membership with a group
-model GroupMembership {
-  id           String @id @db.Uuid
-  tenantId     String @db.Uuid
-  groupId      String @db.Uuid
-  membershipId String @db.Uuid
-  createdAt    DateTime @default(now())
-
-  group      Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, groupId, membershipId])
-  @@index([tenantId, membershipId])
-  @@map("group_memberships")
-}
-
-/// Lightweight tag that can be applied to memberships; tags can be used to build groups
-model PersonTag {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  slug      String
-  name      String
-  createdAt DateTime @default(now())
-
-  @@unique([tenantId, slug])
-  @@index([tenantId])
-  @@map("person_tags")
-}
-
-/// Join table associating person tags with memberships
-model PersonTagging {
-  id           String @id @db.Uuid
-  tenantId     String @db.Uuid
-  tagId        String @db.Uuid
-  membershipId String @db.Uuid
-  createdAt    DateTime @default(now())
-
-  tag        PersonTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, tagId, membershipId])
-  @@index([tenantId, membershipId])
-  @@map("person_taggings")
-}
-
-/// Publication defines how a doc or section is exposed to a particular audience
-model Publication {
-  id           String       @id @db.Uuid
-  tenantId     String       @db.Uuid
-  itemType     String       // type of item (e.g. wikidoc, wikisection)
-  itemId       String       @db.Uuid
-  audience     AudienceKind
-  userIds      String[]     // membership ids if audience is users
-  groupIds     String[]     // group ids if audience is groups
-  showAsBlog   Boolean      @default(false) // show as blog post when audience allows
-  blogSlug     String?
-  publishedByMembershipId String @db.Uuid
-  publishedAt  DateTime     @default(now())
-
-  publishedBy Membership @relation(fields: [publishedByMembershipId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, itemType, itemId])
-  @@index([tenantId, audience, publishedAt])
-  @@map("publications")
-}
-
-// -----------------------------------------------------------------------------
-// Finance models
-//
-// These entities power the Finance Centre. They cover invoices and bills with
-// multi‑line items, payments, basic bookkeeping constructs (tax rates,
-// accounts and journals) and provide the foundation for future expansions
-// (multi‑currency, recurring invoices, reconciliation, etc.). Each table is
-// scoped by tenantId to enforce multi‑tenancy and can be extended with
-// additional fields as your finance module evolves.
-
-/// Line items for invoices. Each item records a description, quantity and unit
-/// price, along with the calculated total. Lines belong to a single invoice
-/// and are cascaded on delete. You may choose to add a productId foreign key
-/// once your product catalogue matures.
-model InvoiceLine {
-  id            String   @id @db.Uuid
-  tenantId      String   @db.Uuid
-  invoiceId     String
-  description   String?
-  quantity      Float    @default(1)
-  unitPriceCents Int
-  totalCents    Int
-  productId     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, invoiceId])
-  @@map("invoice_lines")
-}
-
-/// Payments against invoices. A payment records the amount, currency, date and
-/// optional method/reference. Multiple payments may be recorded per invoice
-/// (e.g. partial payments). When the last invoice payment settles the
-/// outstanding balance, you can update the invoice status accordingly in your
-/// application logic. Payments cascade on invoice deletion.
-model Payment {
-  id           String   @id @db.Uuid
-  tenantId     String   @db.Uuid
-  invoiceId    String
-  amountCents  Int
-  currency     String   @default("USD")
-  paidAt       DateTime @default(now())
-  method       String?
-  reference    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, invoiceId])
-  @@index([tenantId, paidAt])
-  @@map("payments")
-}
-
-/// Vendor bills mirror invoices but represent amounts you owe to vendors.
-/// Bills can have line items similar to invoices and support the same status
-/// lifecycle (draft → open → paid). Use vendorId to link to a Contact record
-/// representing the supplier.
-model Bill {
-  id        String     @id @db.Uuid
-  tenantId  String     @db.Uuid
-  vendorId  String?
-  number    String?
-  totalCents Int
-  currency  String     @default("USD")
-  status    InvoiceStatus @default(draft)
-  issuedAt  DateTime?
-  dueAt     DateTime?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  deletedAt DateTime?
-
-  vendor  Contact?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  lines   BillLine[]
-
-  @@index([tenantId, vendorId])
-  @@index([tenantId, status])
-  @@map("bills")
-}
-
-/// Line items for bills. Structure parallels InvoiceLine. Use separate
-/// description, quantity and unit price fields to capture vendor charges.
-model BillLine {
-  id           String   @id @db.Uuid
-  tenantId     String   @db.Uuid
-  billId       String
-  description  String?
-  quantity     Float    @default(1)
-  unitPriceCents Int
-  totalCents   Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, billId])
-  @@map("bill_lines")
-}
-
-/// Tax rates for different jurisdictions. Use country and region to store
-/// canonical ISO codes. Percentage is expressed as a decimal (e.g. 0.2
-/// represents 20%). Expand this model with effective dates if your rates
-/// change over time.
-model TaxRate {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  country   String
-  region    String?
-  name      String
-  percentage Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([tenantId, country, region])
-  @@map("tax_rates")
-}
-
-/// Chart of accounts. Store codes and names for each ledger account (e.g.
-/// 1000 Cash, 2000 Accounts Payable). The type field can be used to
-/// categorise accounts (e.g. asset, liability, expense). Your application
-/// logic will be responsible for enforcing balanced journal entries.
-model Account {
-  id       String   @id @db.Uuid
-  tenantId String   @db.Uuid
-  code     String
-  name     String
-  type     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  lines JournalLine[]
-
-  @@index([tenantId, code])
-  @@map("accounts")
-}
-
-/// Journal entries represent a single accounting event comprised of multiple
-/// debit and credit lines. Use this model to support accrual accounting and
-/// double‑entry bookkeeping. Application logic must ensure that the sum of
-/// debits equals the sum of credits for each entry.
-model JournalEntry {
-  id       String   @id @db.Uuid
-  tenantId String   @db.Uuid
-  date     DateTime @default(now())
-  memo     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  lines JournalLine[]
-
-  @@index([tenantId, date])
-  @@map("journal_entries")
-}
-
-/// Lines belonging to a journal entry. Each line references an account and
-/// specifies either a debit or credit amount in cents (only one should be
-/// non‑zero). The sum of debits and credits must balance across all lines
-/// belonging to the same entry. Balancing is enforced in application code.
-model JournalLine {
-  id         String   @id @db.Uuid
-  tenantId   String   @db.Uuid
-  entryId    String
-  accountId  String
-  debitCents Int?     @default(0)
-  creditCents Int?    @default(0)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
-  account Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, entryId])
-  @@index([tenantId, accountId])
-  @@map("journal_lines")
-}
-
-// -----------------------------------------------------------------------------
-// Library and Knowledge Management
-//
-// These models support the Library Centre for managing documents, sections,
-// and publishing controls. Designed to support reusable sections, doc
-// transclusion, tagging, and rich publishing controls.
 
 enum DocKind {
   wiki
@@ -909,79 +67,502 @@ enum PublishScope {
   public
 }
 
+enum TaskStatus {
+  todo
+  doing
+  review
+  blocked
+  done
+  canceled
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum MessageChannelKind {
+  email
+  chat
+  social
+  sms
+  internal
+}
+
+// -------------------- Core Tenancy & Users --------------------
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships      Membership[]
+  groups           Group[]
+  roles            Role[]
+  membershipGroups MembershipGroup[]
+  permissionGrants PermissionGrant[]
+  taggings         Tagging[]
+  entityLinks      EntityLink[]
+  fileAssets       FileAsset[]
+  attachments      Attachment[]
+  messageChannels  MessageChannel[]
+  threads          Thread[]
+  messages         Message[]
+  tasks            Task[]
+  taskComments     TaskComment[]
+  libraryDocs      LibraryDoc[]
+  librarySections  LibrarySection[]
+  docSectionLinks  DocSectionLink[]
+  docPublishes     DocPublish[]
+  notifications    Notification[]
+  watches          Watch[]
+  activityEvents   ActivityEvent[]
+  searchIndexes    SearchIndex[]
+
+  // generic helpers
+  tags Tag[]
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  displayName String
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships   Membership[]
+  notifications Notification[]  @relation("UserNotifications")
+  activities    ActivityEvent[] @relation("UserActivities")
+  watches       Watch[]
+
+  @@index([email])
+}
+
+model Membership {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  userId    String   @db.Uuid
+  roleId    String?  @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role?  @relation(fields: [roleId], references: [id])
+
+  groups MembershipGroup[]
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+}
+
+model Group {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  slug      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members MembershipGroup[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, name])
+}
+
+model MembershipGroup {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  membershipId String   @db.Uuid
+  groupId      String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  group      Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, groupId])
+  @@index([tenantId, groupId])
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      RoleName
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  grants      PermissionGrant[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+// Resource-oriented permissions (flexible for any module)
+model PermissionGrant {
+  id        String           @id @default(uuid()) @db.Uuid
+  tenantId  String           @db.Uuid
+  roleId    String           @db.Uuid
+  resource  String // e.g. "task", "doc", "thread", "finance.invoice", "admin.users"
+  action    PermissionAction // read|write|update|delete|admin
+  condition Json? // optional JSON rule (e.g., {"own": true})
+  createdAt DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resource, action])
+  @@index([tenantId, resource, action])
+}
+
+// -------------------- Tags (generic) --------------------
+
+model Tag {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  label     String
+  color     String? // hex token from theme
+  createdAt DateTime @default(now())
+
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uses   Tagging[]
+
+  @@unique([tenantId, label])
+  @@index([tenantId])
+}
+
+// Generic tagging for any entity
+model Tagging {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tagId      String   @db.Uuid
+  entityType String // "task" | "doc" | "thread" | "file" | etc.
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, tagId, entityType, entityId])
+  @@index([tenantId, entityType, entityId])
+}
+
+// -------------------- Cross-entity Linking --------------------
+
+model EntityLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  fromType  String
+  fromId    String   @db.Uuid
+  toType    String
+  toId      String   @db.Uuid
+  kind      LinkKind @default(relates)
+  note      String?
+  createdBy String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, fromType, fromId])
+  @@index([tenantId, toType, toId])
+  @@index([tenantId, kind])
+}
+
+// -------------------- Files & Attachments --------------------
+
+model FileAsset {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  bucket     String
+  objectKey  String
+  mimeType   String
+  sizeBytes  Int
+  sha256     String?
+  uploaderId String?  @db.Uuid
+  createdAt  DateTime @default(now())
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, objectKey])
+}
+
+model Attachment {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  fileId     String   @db.Uuid
+  entityType String // "task" | "thread" | "doc" | ...
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  file   FileAsset @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entityType, entityId])
+}
+
+// -------------------- Messaging --------------------
+
+model MessageChannel {
+  id        String             @id @default(uuid()) @db.Uuid
+  tenantId  String             @db.Uuid
+  kind      MessageChannelKind
+  name      String
+  address   String? // inbox email, phone number, handle, etc.
+  createdAt DateTime           @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  threads Thread[]
+
+  @@unique([tenantId, kind, address])
+  @@index([tenantId, kind])
+}
+
+model Thread {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  channelId  String   @db.Uuid
+  subject    String?
+  status     String   @default("open") // open | snoozed | closed
+  priority   String   @default("normal") // normal | high
+  assigneeId String?  @db.Uuid
+  labels     String[] @db.Text
+  lastAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channel  MessageChannel @relation(fields: [channelId], references: [id])
+  messages Message[]
+
+  @@index([tenantId, lastAt])
+  @@index([tenantId, status])
+  @@index([tenantId, assigneeId])
+  @@index([tenantId], map: "thread_tenant_idx")
+}
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  threadId   String   @db.Uuid
+  authorId   String?  @db.Uuid // nullable for external senders
+  authorAddr String?
+  bodyText   String
+  bodyMd     String?
+  sentAt     DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, threadId, sentAt])
+}
+
+// -------------------- Tasks --------------------
+
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @db.Uuid
+  number      Int // human-friendly incremental per-tenant (handle in app/tx)
+  title       String
+  description String?
+  status      TaskStatus   @default(todo)
+  priority    TaskPriority @default(medium)
+  assigneeIds String[]     @db.Text
+  labels      String[]     @db.Text
+  dueAt       DateTime?
+  createdBy   String?      @db.Uuid
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  comments TaskComment[]
+
+  @@unique([tenantId, number])
+  @@index([tenantId, status, priority])
+  @@index([tenantId, updatedAt])
+  @@index([tenantId, dueAt])
+}
+
+model TaskComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  taskId    String   @db.Uuid
+  authorId  String?  @db.Uuid
+  bodyMd    String
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, taskId, createdAt])
+}
+
+// -------------------- Library (Wiki/Docs) --------------------
+
 model LibraryDoc {
-  id         String    @id @db.Uuid
-  tenantId   String    @db.Uuid
-  title      String
-  slug       String?
-  kind       DocKind   @default(wiki)
-  status     DocStatus @default(draft)
-  ownerId    String?   @db.Uuid        // Membership id
-  tags       String[]  @db.Text
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @db.Uuid
+  title     String
+  slug      String?
+  kind      DocKind   @default(wiki)
+  status    DocStatus @default(draft)
+  ownerId   String?   @db.Uuid
+  tags      String[]  @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  // current content pointer (optional – use snapshots in Section if you prefer CRDT elsewhere)
-  bodyMd     String?   // canonical markdown
-  bodyTypist Json?     // rich blocks (Typist JSON)
+  bodyMd     String?
+  bodyTypist Json?
 
-  sections   DocSectionLink[]
-  publishes  DocPublish[]
+  sections  DocSectionLink[]
+  publishes DocPublish[]
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
   @@index([tenantId, status])
   @@index([tenantId, kind])
-  @@index([tenantId, tags], type: Gin)
-  @@unique([tenantId, slug])
+  @@index([tenantId, updatedAt])
   @@map("library_docs")
 }
 
 model LibrarySection {
-  id        String   @id @db.Uuid
-  tenantId  String   @db.Uuid
-  name      String
-  bodyMd    String?
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  name       String
+  bodyMd     String?
   bodyTypist Json?
-  version   Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  usedBy    DocSectionLink[]
+  usedBy DocSectionLink[]
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, name, version])
   @@index([tenantId, name])
   @@map("library_sections")
 }
 
-// Many-to-many (ordered) – sections embedded in docs with optional parameters
 model DocSectionLink {
-  id         String   @id @db.Uuid
-  tenantId   String   @db.Uuid
-  docId      String   @db.Uuid
-  sectionId  String   @db.Uuid
-  position   Int      @default(0)
-  params     Json?    // e.g., showTitle: true, outlineLevel: 2
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  docId     String   @db.Uuid
+  sectionId String   @db.Uuid
+  position  Int      @default(0)
+  params    Json?
+  createdAt DateTime @default(now())
 
-  doc     LibraryDoc    @relation(fields: [docId], references: [id], onDelete: Cascade)
+  doc     LibraryDoc     @relation(fields: [docId], references: [id], onDelete: Cascade)
   section LibrarySection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, docId, position])
   @@map("doc_section_links")
 }
 
 model DocPublish {
-  id        String       @id @db.Uuid
+  id        String       @id @default(uuid()) @db.Uuid
   tenantId  String       @db.Uuid
   docId     String       @db.Uuid
   scope     PublishScope
-  userIds   String[]     @db.Text // specific users
-  groupIds  String[]     @db.Text // specific groups
-  urlPath   String?      // public/client permalink (if public/clients)
+  userIds   String[]     @db.Text
+  groupIds  String[]     @db.Text
+  urlPath   String?
   createdAt DateTime     @default(now())
 
-  doc LibraryDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  doc    LibraryDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, scope])
   @@map("doc_publishes")
+}
+
+// -------------------- Notifications & Activity --------------------
+
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @db.Uuid
+  userId     String    @db.Uuid
+  entityType String
+  entityId   String    @db.Uuid
+  kind       String // "assigned","mentioned","linked","status_changed",...
+  payload    Json?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, entityType, entityId])
+}
+
+model Watch {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  userId     String   @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, entityType, entityId])
+  @@index([tenantId, entityType, entityId])
+}
+
+model ActivityEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  actorId    String?  @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  action     String // "create","update","link","comment","publish"...
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor  User?  @relation("UserActivities", fields: [actorId], references: [id])
+
+  @@index([tenantId, entityType, entityId, createdAt])
+}
+
+// -------------------- Search (FTS-ready) --------------------
+// NOTE: Prisma does not natively support tsvector columns; you can add them
+// via SQL migrations. Optionally create a separate SearchIndex table or
+// use generated columns on key entities. Provided here is a generic index
+// table pattern.
+
+model SearchIndex {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  entityType String // "task","doc","thread"
+  entityId   String   @db.Uuid
+  // denormalized text used for search previews
+  title      String?
+  snippet    String?
+  // raw text blob to index (app or trigger maintains)
+  content    String
+  // When using FTS, create a tsvector column via SQL and a GIN index
+  // searchVec Unsupported("tsvector")?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, entityType, entityId])
+  @@index([tenantId, updatedAt])
 }

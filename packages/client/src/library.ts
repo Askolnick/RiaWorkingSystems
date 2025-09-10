@@ -7,19 +7,22 @@ export interface LibraryDoc {
   id: ID;
   title: string;
   slug?: string;
+  summary?: string;
   kind: DocKind;
   status: DocStatus;
   ownerId?: ID;
-  tags: string[];
+  tags?: string[];
   bodyMd?: string;
   bodyTypist?: any;
-  updatedAt: string;
-  createdAt: string;
+  sectionIds?: ID[];
+  updatedAt?: string;
+  createdAt?: string;
 }
 
 export interface LibrarySection {
   id: ID;
   name: string;
+  title?: string;
   bodyMd?: string;
   bodyTypist?: any;
   version: number;
@@ -98,6 +101,7 @@ export const createMockLibrary = (): LibraryApi => {
       status: 'published',
       ownerId: '1',
       tags: ['onboarding', 'hr'],
+      summary: 'Complete guide for new employee onboarding',
       bodyMd: '# Onboarding Guide\n\nWelcome to our company...',
       updatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),

@@ -8,5 +8,8 @@ export * from './types';
 export * from './api';
 export * from './auth';
 export * from './library';
+export * from './libraryAPI';
 export * from './links';
 export * from './mock';
+export * from './repositories';
+export * from './stores';

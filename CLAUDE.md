@@ -10,9 +10,11 @@ Ria Living Systems is an ambitious all-in-one business management platform with 
 - **ALWAYS** use the shared packages (`@ria/client`, `@ria/utils`) for cross-module communication
 - **PREFER** event-driven patterns over direct coupling between modules
 
-### 2. Follow the Established Patterns
-- **Finance module** is the reference implementation - study it before implementing new features
-- **Design tokens** from `packages/web-ui/tokens/` must be used for all styling
+### 2. Follow the Clean Architecture Pattern
+- **Repository Pattern** for ALL data access - no direct API calls in components
+- **Zustand Stores** for ALL state management - no useState for shared data
+- **Component Library** for ALL UI elements - no inline styles or custom components
+- **Error Boundaries** for ALL pages - graceful error handling everywhere
 - **TypeScript-first** - no `any` types, proper interfaces for all data structures
 
 ### 3. Maintain the Modular Monolith Architecture
@@ -47,13 +49,225 @@ packages/
 - **TYPES** that are shared must live in `@ria/types` or be co-located
 - **NEVER** duplicate code - if you write it twice, you're doing it wrong
 
+### 6. Routing Must Be Centralized
+- **ALWAYS** use `ROUTES` constants from `@ria/utils/routes` - never hardcode paths
+- **NEVER** use string literals like `"/auth/sign-in"` for routing
+- **UPDATE** `@ria/utils/routes.ts` when adding new routes
+- **EXAMPLE**: Use `ROUTES.SIGN_IN` instead of `"/auth/sign-in"`
+- **REASON**: Base URLs can change, deployments can be under subpaths
+
+### 7. No Emojis in Production Code
+- **NEVER** use emojis in component text, labels, or user-facing content
+- **AVOID** emojis in comments, function names, or variable names  
+- **USE** proper icons from design system instead of emoji shortcuts
+- **EXCEPTION**: Demo/placeholder data can use emojis temporarily
+- **REASON**: Accessibility, professionalism, cross-platform compatibility
+
+## Clean Architecture Implementation
+
+### Architecture Layers
+```
+┌──────────────────────────────────┐
+│     UI Components (@ria/web-ui)   │ ← Reusable components only
+├──────────────────────────────────┤
+│      Stores (@ria/client)         │ ← State management (Zustand)
+├──────────────────────────────────┤
+│   Repositories (@ria/client)      │ ← Data access layer
+├──────────────────────────────────┤
+│       API Client (@ria/client)    │ ← HTTP/WebSocket communication
+├──────────────────────────────────┤
+│    Database Schema (@ria/db)      │ ← Prisma ORM
+└──────────────────────────────────┘
+```
+
+### Repository Pattern (MANDATORY)
+```typescript
+// ❌ WRONG - Direct API calls in components
+const MyComponent = () => {
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    fetch('/api/items').then(res => res.json()).then(setData);
+  }, []);
+};
+
+// ✅ CORRECT - Use repository pattern
+// In packages/client/src/repositories/items.repository.ts
+export class ItemsRepository extends BaseRepository<Item> {
+  protected endpoint = '/items';
+  
+  async getActiveItems(): Promise<Item[]> {
+    return this.request('GET', '/active');
+  }
+}
+
+// In component - use store that uses repository
+const MyComponent = () => {
+  const { items, fetchItems } = useItemsStore();
+  useEffect(() => {
+    fetchItems();
+  }, []);
+};
+```
+
+### State Management with Zustand (MANDATORY)
+```typescript
+// ❌ WRONG - Local state for shared data
+const [documents, setDocuments] = useState([]);
+const [loading, setLoading] = useState(false);
+
+// ✅ CORRECT - Use Zustand store
+export const useDocumentsStore = create<DocumentsStore>()(
+  devtools(
+    immer((set, get) => ({
+      documents: [],
+      loading: false,
+      error: null,
+      
+      fetchDocuments: async () => {
+        set(state => { state.loading = true; });
+        try {
+          const response = await documentsRepository.findAll();
+          set(state => { 
+            state.documents = response.data;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { 
+            state.error = error.message;
+            state.loading = false;
+          });
+        }
+      }
+    }))
+  )
+);
+```
+
+### Error & Loading States (MANDATORY)
+```typescript
+// ❌ WRONG - No error handling or loading states
+const MyComponent = () => {
+  const { data } = useDataStore();
+  return <div>{data.map(...)}</div>;
+};
+
+// ✅ CORRECT - Proper error and loading handling
+import { ErrorBoundary, LoadingCard, Alert } from '@ria/web-ui';
+
+const MyComponent = () => {
+  const { data, loading, error } = useDataStore();
+  
+  if (loading) return <LoadingCard />;
+  if (error) return <Alert type="error">{error}</Alert>;
+  if (!data.length) return <EmptyState />;
+  
+  return (
+    <ErrorBoundary>
+      {data.map(...)}
+    </ErrorBoundary>
+  );
+};
+```
+
 ## Development Workflow
 
 ### Before Adding New Features
 1. **Check if it belongs to an existing module** - don't create new modules unnecessarily
 2. **Review the module's documentation** in `docs/[module].md`
-3. **Study existing patterns** in the finance module for complex features
+3. **Follow the clean architecture pattern** - repository → store → component
 4. **Ensure multi-tenancy** - all queries must be scoped by `tenantId`
+
+### Creating a New Module (Step-by-Step)
+
+#### Step 1: Create the Repository
+```typescript
+// packages/client/src/repositories/[module].repository.ts
+import { BaseRepository, MockRepository } from './base.repository';
+
+export class ModuleRepository extends BaseRepository<ModuleEntity> {
+  protected endpoint = '/module/entities';
+  
+  // Add module-specific methods
+  async getActive(): Promise<ModuleEntity[]> {
+    return this.request('GET', '/active');
+  }
+}
+
+// Mock for development
+export class MockModuleRepository extends MockRepository<ModuleEntity> {
+  protected storageKey = 'ria_module_entities';
+  protected endpoint = '/module/entities';
+}
+
+export const moduleRepository = new MockModuleRepository();
+```
+
+#### Step 2: Create the Store
+```typescript
+// packages/client/src/stores/[module].store.ts
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { moduleRepository } from '../repositories';
+
+export const useModuleStore = create<ModuleState & ModuleActions>()(
+  devtools(
+    immer((set, get) => ({
+      // State
+      items: [],
+      currentItem: null,
+      loading: false,
+      error: null,
+      
+      // Actions
+      fetchItems: async () => {
+        set(state => { state.loading = true; });
+        try {
+          const response = await moduleRepository.findAll();
+          set(state => { 
+            state.items = response.data;
+            state.loading = false;
+          });
+        } catch (error) {
+          set(state => { 
+            state.error = error.message;
+            state.loading = false;
+          });
+        }
+      },
+    }))
+  )
+);
+```
+
+#### Step 3: Create the UI
+```typescript
+// apps/web/app/[module]/page.tsx
+'use client';
+
+import { useEffect } from 'react';
+import { useModuleStore } from '@ria/client';
+import { Card, Button, LoadingCard, Alert, ErrorBoundary } from '@ria/web-ui';
+
+export default function ModulePage() {
+  const { items, loading, error, fetchItems } = useModuleStore();
+  
+  useEffect(() => {
+    fetchItems();
+  }, []);
+  
+  if (loading) return <LoadingCard />;
+  if (error) return <Alert type="error">{error}</Alert>;
+  
+  return (
+    <ErrorBoundary>
+      <Card>
+        {/* Your UI here - using ONLY @ria/web-ui components */}
+      </Card>
+    </ErrorBoundary>
+  );
+}
+```
 
 ### File Organization Rules
 
@@ -204,16 +418,25 @@ packages/[module]-server/
 ## Common Pitfalls to Avoid
 
 1. **Creating new top-level modules** instead of extending existing ones
-2. **Direct database access** from the frontend
-3. **Forgetting tenantId** in queries (data leak risk)
-4. **Synchronous operations** that should be queued
-5. **Tight coupling** between modules
-6. **Ignoring the design system** and creating custom styles
-7. **Adding features without considering mobile UX**
-8. **Implementing complex features without progressive enhancement**
-9. **Creating duplicate UI components** instead of using @ria/web-ui
-10. **Hardcoding styles** instead of using design tokens
-11. **Building complex components** instead of composing simple ones
+2. **Direct API calls in components** instead of using repositories
+3. **Using useState for shared data** instead of Zustand stores
+4. **Direct database access** from the frontend
+5. **Forgetting tenantId** in queries (data leak risk)
+6. **No error boundaries** around pages and components
+7. **No loading states** for async operations
+8. **Using localStorage directly** instead of through stores
+9. **Synchronous operations** that should be queued
+10. **Tight coupling** between modules
+11. **Ignoring the design system** and creating custom styles
+12. **Adding features without considering mobile UX**
+13. **Implementing complex features without progressive enhancement**
+14. **Creating duplicate UI components** instead of using @ria/web-ui
+15. **Hardcoding styles** instead of using design tokens
+16. **Building complex components** instead of composing simple ones
+17. **Hardcoding route paths** instead of using ROUTES constants from @ria/utils
+18. **Using emojis in production code** instead of proper icons
+19. **Breaking routing when base URL changes** by not using centralized routing
+20. **Not following the repository → store → component pattern**
 
 ## Progressive Enhancement Strategy
 
