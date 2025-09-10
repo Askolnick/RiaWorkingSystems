@@ -272,7 +272,7 @@ export abstract class MockRepository<T extends { id: string }, CreateDTO = Parti
       id: Math.random().toString(36).substr(2, 9),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    } as T;
+    } as unknown as T;
     
     items.push(newItem);
     this.setStorage(items);

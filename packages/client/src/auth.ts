@@ -1,11 +1,9 @@
-export type User = {
-  id: string;
-  email: string;
-  name?: string;
-};
-
 export type Session = {
-  user: User;
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+  };
   token: string;
   refreshToken?: string;
 };
