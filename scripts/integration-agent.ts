@@ -151,12 +151,30 @@ class IntegrationAgent {
     this.integrationPath = path.join(this.basePath, 'Modules that need to be integrated');
   }
 
-  async run(): Promise<void> {
+  async run(targetModule?: string): Promise<void> {
     console.log('🤖 Integration Agent Starting...\n');
     
     // Discover and analyze modules
-    const modules = await this.discoverModules();
-    console.log(`📋 Found ${modules.length} modules ready for integration\n`);
+    const allModules = await this.discoverModules();
+    console.log(`📋 Found ${allModules.length} modules ready for integration\n`);
+    
+    // Filter to target module if specified
+    let modules = allModules;
+    if (targetModule) {
+      modules = allModules.filter(m => 
+        m.name.toLowerCase().includes(targetModule.toLowerCase()) ||
+        m.name.includes(targetModule)
+      );
+      
+      if (modules.length === 0) {
+        console.error(`❌ No module found matching "${targetModule}"`);
+        console.log('Available modules:');
+        allModules.forEach(m => console.log(`  - ${m.name}`));
+        return;
+      }
+      
+      console.log(`🎯 Targeting module: ${modules[0].name}\n`);
+    }
     
     // Create integration plan
     const plan = await this.createIntegrationPlan(modules);
