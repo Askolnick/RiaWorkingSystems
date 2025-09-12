@@ -250,6 +250,7 @@ export default function ReconciliationPage() {
               <TabsTrigger value="matching">Auto-Matching</TabsTrigger>
               <TabsTrigger value="sessions">Reconciliation Sessions</TabsTrigger>
               <TabsTrigger value="outstanding">Outstanding Items</TabsTrigger>
+              <TabsTrigger value="variance">Variance Analysis</TabsTrigger>
             </TabsList>
 
             <TabsContent value="transactions" className="space-y-4">
@@ -500,6 +501,282 @@ export default function ReconciliationPage() {
                       </tbody>
                     </Table>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="variance" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Balance Difference</div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {currentAccount ? formatCurrency(currentAccount.bookBalance - currentAccount.bankBalance) : '$0.00'}
+                    </div>
+                    <div className="text-xs text-gray-500">Book vs Bank Balance</div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Unreconciled Transactions</div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {filteredTransactions.filter(t => t.status === 'unreconciled').length}
+                    </div>
+                    <div className="text-xs text-gray-500">Requires attention</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Outstanding Items</div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {outstandingItems.length}
+                    </div>
+                    <div className="text-xs text-gray-500">In transit</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600">Match Rate</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {filteredTransactions.length > 0 
+                        ? Math.round((filteredTransactions.filter(t => t.status === 'matched' || t.status === 'reconciled').length / filteredTransactions.length) * 100)
+                        : 0}%
+                    </div>
+                    <div className="text-xs text-gray-500">Transaction matching</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Reconciliation Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {currentSession ? (
+                      <div className="space-y-4">
+                        <div className="flex justify-between">
+                          <span>Session Period:</span>
+                          <span className="font-medium">
+                            {formatDate(currentSession.startDate)} - {formatDate(currentSession.endDate)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Starting Book Balance:</span>
+                          <span className="font-medium">{formatCurrency(currentSession.startingBookBalance)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Starting Bank Balance:</span>
+                          <span className="font-medium">{formatCurrency(currentSession.startingBankBalance)}</span>
+                        </div>
+                        <hr />
+                        <div className="flex justify-between">
+                          <span>Ending Book Balance:</span>
+                          <span className="font-medium">{formatCurrency(currentSession.endingBookBalance)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Ending Bank Balance:</span>
+                          <span className="font-medium">{formatCurrency(currentSession.endingBankBalance)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Adjustments:</span>
+                          <span className="font-medium">{formatCurrency(currentSession.adjustmentAmount)}</span>
+                        </div>
+                        <hr />
+                        <div className="flex justify-between text-lg font-semibold">
+                          <span>Net Difference:</span>
+                          <span className={currentSession.endingBookBalance - currentSession.endingBankBalance !== 0 ? 'text-red-600' : 'text-green-600'}>
+                            {formatCurrency(currentSession.endingBookBalance - currentSession.endingBankBalance - currentSession.adjustmentAmount)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Transactions:</span>
+                          <span className="font-medium">{currentSession.totalTransactions}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Matched Transactions:</span>
+                          <span className="font-medium text-green-600">{currentSession.matchedTransactions}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Unmatched Bank:</span>
+                          <span className="font-medium text-orange-600">{currentSession.unmatchedBankTransactions}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Unmatched Book:</span>
+                          <span className="font-medium text-orange-600">{currentSession.unmatchedBookTransactions}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <EmptyState>
+                        <p className="text-center text-gray-500">No active reconciliation session</p>
+                        <Button 
+                          onClick={() => setShowNewSessionModal(true)}
+                          className="mt-4"
+                        >
+                          Start New Session
+                        </Button>
+                      </EmptyState>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Variance Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-medium mb-2">Transaction Status Breakdown</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="flex justify-between">
+                            <span>Reconciled:</span>
+                            <Badge variant="success">
+                              {filteredTransactions.filter(t => t.status === 'reconciled').length}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Matched:</span>
+                            <Badge variant="success">
+                              {filteredTransactions.filter(t => t.status === 'matched').length}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Unreconciled:</span>
+                            <Badge variant="warning">
+                              {filteredTransactions.filter(t => t.status === 'unreconciled').length}
+                            </Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Ignored:</span>
+                            <Badge variant="secondary">
+                              {filteredTransactions.filter(t => t.status === 'ignored').length}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <h4 className="font-medium mb-2">Outstanding Items Analysis</h4>
+                        <div className="space-y-2 text-sm">
+                          {outstandingItems.length > 0 ? (
+                            <>
+                              <div className="flex justify-between">
+                                <span>0-30 days:</span>
+                                <span className="font-medium text-green-600">
+                                  {outstandingItems.filter(item => item.ageCategory === '0-30').length}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>31-60 days:</span>
+                                <span className="font-medium text-yellow-600">
+                                  {outstandingItems.filter(item => item.ageCategory === '31-60').length}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>61-90 days:</span>
+                                <span className="font-medium text-orange-600">
+                                  {outstandingItems.filter(item => item.ageCategory === '61-90').length}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>90+ days:</span>
+                                <span className="font-medium text-red-600">
+                                  {outstandingItems.filter(item => item.ageCategory === '90+').length}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-gray-500 text-center">No outstanding items</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-yellow-50 rounded-lg">
+                        <h4 className="font-medium mb-2">Reconciliation Health</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Balance Variance:</span>
+                            <span className={Math.abs(currentAccount?.bookBalance - currentAccount?.bankBalance || 0) > 100 ? 'font-medium text-red-600' : 'font-medium text-green-600'}>
+                              {Math.abs(currentAccount?.bookBalance - currentAccount?.bankBalance || 0) < 0.01 ? 'Balanced' : 'Variance exists'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Last Reconciliation:</span>
+                            <span className="font-medium">
+                              {currentAccount?.lastReconciliationDate ? formatDate(currentAccount.lastReconciliationDate) : 'Never'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Days Since Last:</span>
+                            <span className="font-medium">
+                              {currentAccount?.lastReconciliationDate 
+                                ? Math.floor((new Date().getTime() - new Date(currentAccount.lastReconciliationDate).getTime()) / (1000 * 60 * 60 * 24))
+                                : 'N/A'} days
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Reconciliation Report</CardTitle>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        Export PDF
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Export Excel
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600">
+                      Generate detailed reconciliation reports for auditing and compliance purposes.
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Summary Report</h4>
+                        <p className="text-sm text-gray-600 mb-3">
+                          High-level reconciliation summary with key metrics and variances.
+                        </p>
+                        <Button variant="outline" size="sm" className="w-full">
+                          Generate Summary
+                        </Button>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Detailed Report</h4>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Complete transaction-by-transaction reconciliation details.
+                        </p>
+                        <Button variant="outline" size="sm" className="w-full">
+                          Generate Detailed
+                        </Button>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Exception Report</h4>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Focus on unmatched transactions and outstanding items.
+                        </p>
+                        <Button variant="outline" size="sm" className="w-full">
+                          Generate Exceptions
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

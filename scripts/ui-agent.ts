@@ -25,6 +25,10 @@ interface ComponentRequest {
   props?: string[];
   variant?: 'theme' | 'action' | 'attention';
   hasChildren?: boolean;
+  hasInteractivity?: boolean; // Does it have onClick, onChange, etc.?
+  hasState?: boolean; // Does it use useState, useEffect, etc.?
+  complexLogic?: boolean; // 3+ lines of logic?
+  justification?: string; // Why is this a component instead of CSS class?
 }
 
 interface ProcessResult {
@@ -101,13 +105,17 @@ class UIAgent {
     
     const results: ProcessResult[] = [];
     
-    // For now, create a sample component to demonstrate the system
+    // Validate component requests to prevent unnecessary components
     const sampleComponent: ComponentRequest = {
-      name: 'ThemeCard',
+      name: 'InteractiveCard',
       type: 'molecule',
-      props: ['title', 'description', 'variant'],
+      props: ['title', 'description', 'onClick', 'onHover', 'disabled'],
       variant: 'theme',
-      hasChildren: true
+      hasChildren: true,
+      hasInteractivity: true, // Has onClick, onHover
+      hasState: false, // No internal state for this example
+      complexLogic: true, // Click handling, disabled logic
+      justification: 'Interactive card with click handlers and hover states - requires React component for event handling'
     };
     
     try {
@@ -145,6 +153,17 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
   }
 
   private async createComponent(request: ComponentRequest): Promise<ProcessResult> {
+    // Validate if component is actually needed
+    const validation = this.validateComponentNeed(request);
+    if (!validation.shouldCreate) {
+      return {
+        file: `${request.name}.tsx`,
+        success: false,
+        changes: [],
+        errors: [`Component not needed: ${validation.reason}`, `Suggestion: ${validation.alternative}`]
+      };
+    }
+
     const componentPath = path.join(this.COMPONENT_DIR, 'molecules', `${request.name}.tsx`);
     const storyPath = path.join(this.STORIES_DIR, 'molecules', `${request.name}.stories.tsx`);
     
@@ -158,6 +177,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     if (!this.dryRun) {
       await fs.writeFile(componentPath, componentContent);
       changes.push(`Created component: ${componentPath}`);
+      changes.push(`Justification: ${request.justification}`);
     }
     
     // Generate story
@@ -181,21 +201,91 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     };
   }
 
-  private generateComponent(request: ComponentRequest): string {
-    const { name, props = [], hasChildren = false } = request;
+  private validateComponentNeed(request: ComponentRequest): { 
+    shouldCreate: boolean; 
+    reason?: string; 
+    alternative?: string; 
+  } {
+    // Check for common anti-patterns
+    const name = request.name.toLowerCase();
     
-    return `import React from 'react';
+    // Text-only components
+    if (name.includes('text') || name.includes('heading') || name.includes('title') || name.includes('label')) {
+      if (!request.hasInteractivity && !request.hasState && !request.complexLogic) {
+        return {
+          shouldCreate: false,
+          reason: 'Text-only components should be CSS classes',
+          alternative: 'Use semantic CSS classes like .large-heading, .body, .small-body from design system'
+        };
+      }
+    }
+    
+    // Simple wrappers
+    if (name.includes('wrapper') || name.includes('container') || name.includes('box')) {
+      if (!request.hasInteractivity && !request.hasState && !request.complexLogic) {
+        return {
+          shouldCreate: false,
+          reason: 'Simple wrapper components should be CSS classes',
+          alternative: 'Use layout CSS classes like .container, .flex-center, or semantic HTML elements'
+        };
+      }
+    }
+    
+    // Icon wrappers
+    if (name.includes('icon') && !request.hasInteractivity && !request.hasState) {
+      return {
+        shouldCreate: false,
+        reason: 'Simple icon wrapper components are unnecessary',
+        alternative: 'Import and use icons directly from @heroicons/react or your icon library'
+      };
+    }
+    
+    // Components without justification
+    if (!request.hasInteractivity && !request.hasState && !request.complexLogic) {
+      if (!request.justification) {
+        return {
+          shouldCreate: false,
+          reason: 'Component lacks interactive logic, state management, or complex behavior',
+          alternative: 'Consider using CSS classes, constants, or utility functions instead'
+        };
+      }
+    }
+    
+    // Valid component - has interaction, state, or complex logic
+    return { shouldCreate: true };
+  }
+
+  private generateComponent(request: ComponentRequest): string {
+    const { name, props = [], hasChildren = false, hasInteractivity = false, hasState = false } = request;
+    
+    // Generate proper prop types based on interactivity
+    const propTypes = props.map(prop => {
+      if (prop.includes('onClick') || prop.includes('onHover') || prop.includes('onChange')) {
+        return `${prop}?: () => void;`;
+      } else if (prop === 'disabled') {
+        return `${prop}?: boolean;`;
+      } else {
+        return `${prop}?: string;`;
+      }
+    }).join('\n  ');
+
+    const stateImports = hasState ? ', { useState, useEffect }' : '';
+    const eventHandlers = hasInteractivity ? this.generateEventHandlers(request) : '';
+    const justificationComment = request.justification ? `\n * Justification: ${request.justification}` : '';
+    
+    return `import React${stateImports}, { forwardRef } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import { cn } from '../utils/cn';
 
-interface ${name}Props {
-  ${props.map(prop => `${prop}?: string;`).join('\n  ')}
+interface ${name}Props extends ComponentPropsWithRef<'div'> {
+  ${propTypes}
   variant?: 'theme' | 'action' | 'attention';
   className?: string;
   ${hasChildren ? 'children?: React.ReactNode;' : ''}
 }
 
 /**
- * ${name} - Following buoy-inspired design system
+ * ${name} - Following buoy-inspired design system & coding standards${justificationComment}
  * 
  * Uses 8-color theme system with semantic classes:
  * - Theme: Primary brand color (customizable)
@@ -206,71 +296,129 @@ interface ${name}Props {
  * - Large radius (24px) for cards and panels
  * - Theme-aware background and text colors
  * - Consistent spacing and typography
+ * - Touch-friendly 44px minimum targets
+ * - Proper accessibility attributes
  */
-export const ${name}: React.FC<${name}Props> = ({
-  ${props.map(prop => prop).join(', ')},
-  variant = 'theme',
-  className,
-  ${hasChildren ? 'children,' : ''}
-  ...props
-}) => {
-  const baseClasses = [
-    'squircle-large', // Apple-style large radius for cards
-    'border-2',
-    'transition-all',
-    'focus-visible-only' // Accessibility: only show focus ring for keyboard users
-  ];
-  
-  const paddingClasses = [
-    'p-6' // Using component spacing system
-  ];
-  
-  const variantClasses = {
-    theme: [
-      'bg-background',
-      'border-theme',
-      'text-theme',
-      'hover:bg-theme-5' // 5% opacity background on hover
-    ],
-    action: [
-      'bg-background', 
-      'border-action',
-      'text-action',
-      'hover:bg-action-10' // 10% opacity background on hover
-    ],
-    attention: [
-      'bg-background',
-      'border-attention', 
-      'text-attention',
-      'hover:bg-attention-10' // 10% opacity background on hover
-    ]
-  };
-  
-  const classes = cn(
-    baseClasses,
-    paddingClasses,
-    variantClasses[variant],
-    className
-  );
+export const ${name} = forwardRef<HTMLDivElement, ${name}Props>(
+  function ${name}({
+    ${props.map(prop => prop).join(', ')},
+    variant = 'theme',
+    className,
+    ${hasChildren ? 'children,' : ''}
+    ...props
+  }, ref) {
+    ${eventHandlers}
 
-  return (
-    <div className={classes} {...props}>
-      ${props.includes('title') ? `
-      {title && (
-        <h3 className="medium-heading mb-2">
-          {title}
-        </h3>
-      )}` : ''}
-      ${props.includes('description') ? `
-      {description && (
-        <p className="body text-theme-70">
-          {description}  
-        </p>
-      )}` : ''}
-      ${hasChildren ? '{children}' : ''}
-    </div>
-  );
-};`;
+    const baseClasses = [
+      'squircle-large', // Apple-style large radius for cards
+      'border-2',
+      'transition-all',
+      'focus-visible-only', // Accessibility: only show focus ring for keyboard users
+      ${hasInteractivity ? "'cursor-pointer'," : ''}
+    ];
+    
+    const paddingClasses = [
+      'p-6' // Using component spacing system
+    ];
+    
+    const variantClasses = {
+      theme: [
+        'bg-background',
+        'border-theme',
+        'text-theme',
+        'hover:bg-theme-5' // 5% opacity background on hover
+      ],
+      action: [
+        'bg-background', 
+        'border-action',
+        'text-action',
+        'hover:bg-action-10' // 10% opacity background on hover
+      ],
+      attention: [
+        'bg-background',
+        'border-attention', 
+        'text-attention',
+        'hover:bg-attention-10' // 10% opacity background on hover
+      ]
+    };
+    
+    const classes = cn(
+      baseClasses,
+      paddingClasses,
+      variantClasses[variant],
+      ${props.includes('disabled') ? "{ 'opacity-50 cursor-not-allowed': disabled }," : ''}
+      className
+    );
+
+    return (
+      <div 
+        ref={ref}
+        className={classes} 
+        ${hasInteractivity ? this.generateEventProps(request) : ''}
+        ${props.includes('disabled') ? 'aria-disabled={disabled}' : ''}
+        {...props}
+      >
+        ${props.includes('title') ? `
+        {title && (
+          <h3 className="medium-heading mb-2">
+            {title}
+          </h3>
+        )}` : ''}
+        ${props.includes('description') ? `
+        {description && (
+          <p className="body text-theme-70">
+            {description}  
+          </p>
+        )}` : ''}
+        ${hasChildren ? '{children}' : ''}
+      </div>
+    );
+  }
+);
+
+${name}.displayName = '${name}';`;
+  }
+
+  private generateEventHandlers(request: ComponentRequest): string {
+    if (!request.hasInteractivity) return '';
+    
+    let handlers = '';
+    
+    if (request.props?.includes('onClick')) {
+      handlers += `
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!disabled) {
+        onClick?.();
+      }
+    };`;
+    }
+    
+    if (request.props?.includes('onHover')) {
+      handlers += `
+    const handleMouseEnter = () => {
+      if (!disabled) {
+        onHover?.();
+      }
+    };`;
+    }
+    
+    return handlers;
+  }
+
+  private generateEventProps(request: ComponentRequest): string {
+    if (!request.hasInteractivity) return '';
+    
+    let eventProps = '';
+    
+    if (request.props?.includes('onClick')) {
+      eventProps += 'onClick={handleClick}\n        ';
+    }
+    
+    if (request.props?.includes('onHover')) {
+      eventProps += 'onMouseEnter={handleMouseEnter}\n        ';
+    }
+    
+    return eventProps.trim();
   }
 
   private generateStory(request: ComponentRequest): string {
