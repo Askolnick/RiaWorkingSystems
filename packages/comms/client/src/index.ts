@@ -1,1 +1,2 @@
-// comms client exports
+export * from './types';
+export { createMockMessaging } from './mock';

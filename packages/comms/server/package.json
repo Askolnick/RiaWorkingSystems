@@ -1,5 +1,5 @@
 {
-  "name": "@ria/db",
+  "name": "@ria/comms-server",
   "version": "0.1.0",
   "description": "Database package for RIA Management System",
   "main": "index.ts",
