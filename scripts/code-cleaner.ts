@@ -799,27 +799,44 @@ async function main() {
   
   if (help) {
     console.log(`
-🧹 Enhanced Code Cleanup Agent - Fixes build/TypeScript errors & enforces standards
+🧹 Code Cleanup Agent - Complete Development Quality Automation  
 
-This super-careful agent finds and fixes:
+MANDATORY before committing - replaces manual code review and quality checks.
 
 🔧 Build & TypeScript Errors:
+• Real compiler error detection via "pnpm build" and "pnpm typecheck"
 • Missing imports and type annotations
-• Type safety violations (no any types)
+• Type safety violations (strict no-any enforcement)
 • Compilation errors preventing builds
 
-📋 Coding Standards (CODING_STANDARDS.md):
+📋 28 Coding Standards (CODING_STANDARDS.md):
 • Strict TypeScript enforcement
 • Component development standards (forwardRef, proper typing)
 • State management standards (Zustand patterns)  
-• Repository pattern enforcement
+• Repository pattern enforcement (no direct API calls)
 • Import/export organization
-• Error handling standards
+• Error handling standards (error boundaries, loading states)
 
-🏗️ Architectural Rules:
+🏗️ CLAUDE.md Architectural Rules:
 • Module boundaries (no direct imports between modules)
 • Component library usage (@ria/web-ui only)
+• Repository pattern enforcement (no direct API calls)  
+• Zustand store patterns (no useState for shared data)
+• Error boundaries and loading states (mandatory)
 • No bandaid fixes - only proper architectural solutions
+
+🧠 Simplicity-First Enforcement:
+• Detects overly complex components (3+ hooks)
+• Flags long functions/methods (50+ lines)
+• Identifies complex conditional logic
+• Suggests component breakdown and refactoring
+• Promotes "simplest, cleanest route" principle
+
+🚫 Anti-Pattern Prevention:
+• Prevents unnecessary React components (should be CSS classes)
+• Blocks text-only components, simple wrappers, icon wrappers
+• Validates component justification (needs interactivity/state/logic)
+• Component vs CSS class decision framework
 
 Usage:
   tsx scripts/code-cleaner.ts [path] [--dry-run]
@@ -836,9 +853,12 @@ Examples:
 The agent will:
 1. Commit current changes to Git (safety first)
 2. Run build and typecheck to find errors  
-3. Scan files for coding standard violations
+3. Scan files for 28 coding standards violations
 4. Apply automatic fixes where possible (NO bandaid fixes)
-5. Report remaining issues that need manual fixes
+5. Analyze complexity and suggest simplifications
+6. Report remaining issues that need manual fixes
+
+⚠️  RUN THIS BEFORE COMMITTING - replaces manual code review
 `);
     return;
   }

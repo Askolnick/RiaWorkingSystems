@@ -498,15 +498,29 @@ async function main() {
   
   if (help) {
     console.log(`
-🎨 UI Agent - Creates UI components with buoy-inspired design system
+🎨 UI Agent - Component Development Workflow Automation
 
-Features:
+MANDATORY for ALL component creation - replaces manual component development.
+
+🔍 Component Analysis:
+• Checks Component Library (COMPONENT_LIBRARY.md) for existing components  
+• Prevents duplicate components through similarity analysis
+• Validates component vs CSS class decisions
+• Enforces design system compliance
+
+🎨 Design System Features:
 • 8-color theme system (theme, action, inaction, background, attention + lifeboat variants)
 • 5 semantic font classes (large-heading, medium-heading, small-heading, body, small-body)  
 • 3-button system (btn-primary, btn-secondary, btn-tertiary)
 • Unified form inputs with consistent styling
 • Apple-style squircle adaptive radius system
 • 75% overlay standard for consistent opacity
+
+📋 Anti-Pattern Prevention:
+• Prevents text-only components (should be CSS classes)
+• Prevents simple wrappers (should be CSS classes) 
+• Prevents icon wrappers (should be direct icon imports)
+• Requires justification for components without interactivity/state
 
 Usage:
   tsx scripts/ui-agent.ts [path] [--dry-run]
@@ -521,9 +535,13 @@ Examples:
 
 The agent will:
 1. Commit current changes to Git (safety first)
-2. Create components following buoy design patterns
-3. Generate Storybook stories for documentation
-4. Update component exports automatically
+2. Search existing components to prevent duplicates
+3. Validate component necessity (interactive logic, state, or complexity required)
+4. Create components following buoy design patterns
+5. Generate Storybook stories for documentation
+6. Update component exports automatically
+
+⚠️  NEVER create UI components manually - ALWAYS use this agent
 `);
     return;
   }

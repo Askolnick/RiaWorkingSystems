@@ -440,7 +440,28 @@ async function main() {
   
   if (help) {
     console.log(`
-🚀 Refactor Agent - Break down large files into manageable components
+🚀 Refactor Agent - File Organization & Module Creation Automation
+
+Handles large file breakdown and new module creation following CLAUDE.md patterns.
+
+🔍 File Analysis:
+• Identifies files over 500 lines that need breakdown  
+• Extracts components, hooks, utilities, and types
+• Follows clean architecture patterns (Repository → Store → Component)
+• Maintains modular monolith structure
+
+📁 Module Creation Support:
+• Repository pattern implementation (BaseRepository, MockRepository)
+• Zustand store creation with proper patterns
+• Component structure with error boundaries and loading states
+• Multi-tenancy enforcement (tenantId scoping)
+• File organization following CODE_ORGANIZATION.md
+
+🏗️ Architectural Compliance:
+• Ensures module boundaries are respected
+• Enforces @ria/client, @ria/web-ui import patterns
+• Maintains TypeScript-first approach
+• Implements proper error handling patterns
 
 Usage:
   tsx scripts/refactor-agent.ts [file/directory] [options]

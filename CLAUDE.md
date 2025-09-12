@@ -317,44 +317,27 @@ packages/[module]-server/
 - [ ] Implement rate limiting for API endpoints
 - [ ] Audit log sensitive operations
 
-## Code Review Checklist
+## Automated Code Quality
 
-### Before Committing
-- [ ] No console.logs in production code
-- [ ] TypeScript types are properly defined
-- [ ] Database migrations are reversible
-- [ ] Multi-tenancy is maintained
-- [ ] Tests are written and passing
-- [ ] Documentation is updated
+### Code Cleanup Agent
+**Use the Code Cleanup Agent** - `npx tsx scripts/code-cleaner.ts` for all quality checks
 
-### Architecture Decisions
-- [ ] Module boundaries are respected
-- [ ] No circular dependencies introduced
-- [ ] Performance impact considered
-- [ ] Scalability path is clear
+The Code Cleanup Agent handles:
+- **28 Coding Standards** - Automatic enforcement and fixes
+- **Build/TypeScript Errors** - Real compiler error detection  
+- **Architectural Violations** - Module boundary checks
+- **Common Pitfalls** - 20+ anti-pattern detection rules
+- **Simplicity Enforcement** - Complexity analysis and suggestions
+- **Component vs CSS** - Prevents unnecessary React components
 
-## Common Pitfalls to Avoid
+### Manual Quality Checklist
+- [ ] **Run Code Cleanup Agent** before committing
+- [ ] **Review agent suggestions** and apply manually if needed
+- [ ] **Database migrations** are reversible
+- [ ] **Tests written** and passing
+- [ ] **Documentation updated** for new features
 
-1. **Creating new top-level modules** instead of extending existing ones
-2. **Direct API calls in components** instead of using repositories
-3. **Using useState for shared data** instead of Zustand stores
-4. **Direct database access** from the frontend
-5. **Forgetting tenantId** in queries (data leak risk)
-6. **No error boundaries** around pages and components
-7. **No loading states** for async operations
-8. **Using localStorage directly** instead of through stores
-9. **Synchronous operations** that should be queued
-10. **Tight coupling** between modules
-11. **Ignoring the design system** and creating custom styles
-12. **Adding features without considering mobile UX**
-13. **Implementing complex features without progressive enhancement**
-14. **Creating duplicate UI components** instead of using @ria/web-ui
-15. **Hardcoding styles** instead of using design tokens
-16. **Building complex components** instead of composing simple ones
-17. **Hardcoding route paths** instead of using ROUTES constants from @ria/utils
-18. **Using emojis in production code** instead of proper icons
-19. **Breaking routing when base URL changes** by not using centralized routing
-20. **Not following the repository → store → component pattern**
+> **Note**: All common pitfalls and architectural violations are automatically detected by the Code Cleanup Agent
 
 ## Progressive Enhancement Strategy
 
@@ -446,12 +429,18 @@ The UI Agent handles:
 ## Quick Commands
 
 ```bash
+# Development Agents (USE THESE FIRST)
+npx tsx scripts/code-cleaner.ts     # Fix all code quality issues
+npx tsx scripts/ui-agent.ts         # Create UI components  
+npx tsx scripts/refactor-agent.ts   # Break down large files
+npx tsx scripts/tool-builder.ts     # Create new development tools
+
 # Development
 pnpm dev                 # Start all services
 pnpm build              # Build all packages
 pnpm test               # Run all tests
 
-# Code Quality
+# Code Quality (After running agents)
 pnpm lint               # ESLint check
 pnpm typecheck          # TypeScript check
 pnpm format             # Prettier format
@@ -465,10 +454,6 @@ pnpm db:reset           # Reset database
 pnpm --filter @ria/web-ui storybook  # Start Storybook
 pnpm --filter @ria/web-ui test       # Test components
 pnpm --filter @ria/web-ui build      # Build component library
-
-# Module-specific
-pnpm --filter @ria/finance-server test
-pnpm --filter @ria/web dev
 ```
 
 ## Getting Help & Key Documents
