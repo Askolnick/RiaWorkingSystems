@@ -319,6 +319,24 @@ class CodeCleaner {
       violationType: 'warning',
       message: 'Component has too many hooks and complexity - consider breaking down',
       suggestion: 'Split into smaller, focused components or extract custom hooks'
+    },
+
+    // Simplicity-first: Long functions/methods
+    {
+      name: 'long-function',
+      pattern: /(?:function|const\s+\w+\s*=|\w+\s*:\s*(?:async\s+)?(?:function|\()?)[\s\S]*?\{[\s\S]*?(?:\n.*){50,}?\}/g,
+      violationType: 'warning', 
+      message: 'Function/method is too long (50+ lines) - consider breaking down',
+      suggestion: 'Extract smaller, focused functions with single responsibilities'
+    },
+
+    // Simplicity-first: Complex conditional logic
+    {
+      name: 'complex-conditional',
+      pattern: /if\s*\([^)]*(?:&&|\|\|)[^)]*(?:&&|\|\|)[^)]*(?:&&|\|\|)[^)]*\)/g,
+      violationType: 'warning',
+      message: 'Complex conditional logic - consider extracting to named functions',
+      suggestion: 'Create well-named predicate functions for complex conditions'
     }
   ];
 
@@ -452,6 +470,57 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     }
   }
 
+  private analyzeComplexity(content: string, filePath: string): {complexity: number, suggestions: string[]} {
+    let complexity = 0;
+    const suggestions: string[] = [];
+    
+    // Count complexity indicators
+    const hookCount = (content.match(/use[A-Z]\w+/g) || []).length;
+    const conditionalCount = (content.match(/\bif\s*\(/g) || []).length; 
+    const loopCount = (content.match(/\b(for|while|forEach|map|filter)\s*\(/g) || []).length;
+    const functionCount = (content.match(/(?:function|const\s+\w+\s*=)/g) || []).length;
+    const lineCount = content.split('\n').length;
+    
+    complexity = hookCount * 2 + conditionalCount + loopCount + Math.floor(lineCount / 50);
+    
+    // Generate simplicity suggestions based on user's emphasis on "simplest, cleanest route"
+    if (hookCount > 5) {
+      suggestions.push(`Extract ${hookCount - 3} hooks into custom hooks - component has too many hooks`);
+    }
+    
+    if (conditionalCount > 8) {
+      suggestions.push(`Complex conditional logic detected - extract predicate functions`);
+    }
+    
+    if (lineCount > 200) {
+      suggestions.push(`File is ${lineCount} lines - consider breaking into smaller modules`);
+    }
+    
+    if (functionCount > 10) {
+      suggestions.push(`${functionCount} functions in one file - consider splitting into focused modules`);
+    }
+    
+    // Check for nested complexity
+    const nestedPatterns = content.match(/\{\s*[\s\S]*?\{\s*[\s\S]*?\{\s*[\s\S]*?\}/g);
+    if (nestedPatterns && nestedPatterns.length > 3) {
+      suggestions.push(`Deep nesting detected - flatten structure or extract functions`);
+    }
+    
+    // Check for long parameter lists
+    const longParams = content.match(/\([^)]{100,}\)/g);
+    if (longParams && longParams.length > 0) {
+      suggestions.push(`Long parameter lists found - consider using configuration objects`);
+    }
+    
+    // Check for excessive imports (complexity indicator)
+    const importLines = content.match(/^import.*from.*;$/gm) || [];
+    if (importLines.length > 15) {
+      suggestions.push(`${importLines.length} imports - consider consolidating dependencies`);
+    }
+    
+    return { complexity, suggestions };
+  }
+
   private async findFiles(targetPath: string): Promise<string[]> {
     const patterns = [
       '**/*.ts',
@@ -511,6 +580,20 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
 
     // Additional architectural checks
     await this.checkArchitecturalPatterns(filePath, content, violations);
+    
+    // Complexity analysis for simplicity enforcement
+    const complexityAnalysis = this.analyzeComplexity(content, filePath);
+    if (complexityAnalysis.suggestions.length > 0) {
+      complexityAnalysis.suggestions.forEach(suggestion => {
+        violations.push({
+          type: 'warning',
+          rule: 'simplicity-first',
+          line: 1,
+          message: suggestion,
+          suggestion: 'Follow the "simplest, cleanest route" principle - refactor for clarity'
+        });
+      });
+    }
     
     // Write fixed content if changes were made
     if (content !== originalContent && !this.dryRun) {

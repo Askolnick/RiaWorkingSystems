@@ -171,103 +171,21 @@ const MyComponent = () => {
 
 ## Development Workflow
 
-### Before Adding New Features
-1. **Check if it belongs to an existing module** - don't create new modules unnecessarily
-2. **Review the module's documentation** in `docs/[module].md`
-3. **Follow the clean architecture pattern** - repository → store → component
-4. **Ensure multi-tenancy** - all queries must be scoped by `tenantId`
+### Automated Development Process
+1. **Use the Code Cleanup Agent** - `npx tsx scripts/code-cleaner.ts` enforces all architectural rules
+2. **Use the UI Agent** - `npx tsx scripts/ui-agent.ts` for creating components following design system
+3. **Use the Refactor Agent** - `npx tsx scripts/refactor-agent.ts` for breaking down large files
+4. **Manual Review** - Check agent outputs and architectural compliance
 
-### Creating a New Module (Step-by-Step)
+### Creating New Features
 
-#### Step 1: Create the Repository
-```typescript
-// packages/client/src/repositories/[module].repository.ts
-import { BaseRepository, MockRepository } from './base.repository';
+1. **Run Code Cleanup Agent** - Ensures compliance with all architectural rules
+2. **Use Repository Pattern** - All data access through `@ria/client` repositories
+3. **Use Zustand Stores** - All state management through `@ria/client` stores
+4. **Use Component Library** - All UI through `@ria/web-ui` components
+5. **Ensure Multi-tenancy** - All queries scoped by `tenantId`
 
-export class ModuleRepository extends BaseRepository<ModuleEntity> {
-  protected endpoint = '/module/entities';
-  
-  // Add module-specific methods
-  async getActive(): Promise<ModuleEntity[]> {
-    return this.request('GET', '/active');
-  }
-}
-
-// Mock for development
-export class MockModuleRepository extends MockRepository<ModuleEntity> {
-  protected storageKey = 'ria_module_entities';
-  protected endpoint = '/module/entities';
-}
-
-export const moduleRepository = new MockModuleRepository();
-```
-
-#### Step 2: Create the Store
-```typescript
-// packages/client/src/stores/[module].store.ts
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
-import { moduleRepository } from '../repositories';
-
-export const useModuleStore = create<ModuleState & ModuleActions>()(
-  devtools(
-    immer((set, get) => ({
-      // State
-      items: [],
-      currentItem: null,
-      loading: false,
-      error: null,
-      
-      // Actions
-      fetchItems: async () => {
-        set(state => { state.loading = true; });
-        try {
-          const response = await moduleRepository.findAll();
-          set(state => { 
-            state.items = response.data;
-            state.loading = false;
-          });
-        } catch (error) {
-          set(state => { 
-            state.error = error.message;
-            state.loading = false;
-          });
-        }
-      },
-    }))
-  )
-);
-```
-
-#### Step 3: Create the UI
-```typescript
-// apps/web/app/[module]/page.tsx
-'use client';
-
-import { useEffect } from 'react';
-import { useModuleStore } from '@ria/client';
-import { Card, Button, LoadingCard, Alert, ErrorBoundary } from '@ria/web-ui';
-
-export default function ModulePage() {
-  const { items, loading, error, fetchItems } = useModuleStore();
-  
-  useEffect(() => {
-    fetchItems();
-  }, []);
-  
-  if (loading) return <LoadingCard />;
-  if (error) return <Alert type="error">{error}</Alert>;
-  
-  return (
-    <ErrorBoundary>
-      <Card>
-        {/* Your UI here - using ONLY @ria/web-ui components */}
-      </Card>
-    </ErrorBoundary>
-  );
-}
-```
+> **Note**: Detailed step-by-step module creation is handled by the Refactor Agent
 
 ### File Organization Rules
 
@@ -509,28 +427,21 @@ import { createInvoice } from '@ria/finance-server';
 
 ## Component Development Workflow
 
-### Before Creating Any UI Element
-1. **Check Component Library** - Look in packages/web-ui/COMPONENT_LIBRARY.md
-2. **Search Existing Components** - Something similar might already exist
-3. **Compose First** - Try combining existing components before creating new ones
-4. **Design System Only** - Use only colors/spacing from design tokens
+### Automated Component Creation
+**Use the UI Agent** - `npx tsx scripts/ui-agent.ts` for all component creation
 
-### Component Creation Process
-```bash
-# 1. Check if component exists
-grep -r "ComponentName" packages/web-ui/src/
+The UI Agent handles:
+- Component library validation (prevents duplicates)
+- Design system compliance (buoy-inspired theme)
+- Component vs CSS class decision making
+- Storybook story generation
+- Export management
+- Anti-pattern prevention
 
-# 2. If not, create in web-ui package
-mkdir packages/web-ui/src/ComponentName
-touch packages/web-ui/src/ComponentName/ComponentName.tsx
-touch packages/web-ui/src/ComponentName/ComponentName.stories.tsx
-
-# 3. Export from index
-echo "export * from './ComponentName/ComponentName';" >> packages/web-ui/src/index.ts
-
-# 4. Use in app
-# import { ComponentName } from '@ria/web-ui';
-```
+### Manual Component Guidelines  
+1. **NEVER create components manually** - always use UI Agent
+2. **Check Component Library first** - `COMPONENT_LIBRARY.md`
+3. **Import only from @ria/web-ui** - never create local components
 
 ## Quick Commands
 
