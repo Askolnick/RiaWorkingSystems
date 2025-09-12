@@ -1,9 +1,16 @@
 "use client";
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useLearningStore } from '@ria/client';
 import { Button, Input, LoadingSpinner, ErrorAlert } from '@ria/web-ui';
-import LibraryTabs from '../_components/LibraryTabs';
-import CourseCard from './_components/CourseCard';
+
+const LibraryTabs = dynamic(() => import('../_components/LibraryTabs'), {
+  loading: () => <div className="border-b mb-3 h-12 animate-pulse bg-gray-100 rounded" />
+});
+
+const CourseCard = dynamic(() => import('./_components/CourseCard'), {
+  loading: () => <div className="bg-white border rounded-lg p-4 h-48 animate-pulse" />
+});
 
 export default function LearningPage() {
   const { 

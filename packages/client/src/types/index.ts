@@ -2,3 +2,4 @@
 export * from './finance.types';
 export * from './learning.types';
 export * from './uploads.types';
+export * from './entity-link.types';

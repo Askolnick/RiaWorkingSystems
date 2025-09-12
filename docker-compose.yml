@@ -49,11 +49,12 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXTAUTH_URL=http://localhost:3000
+      # NEXTAUTH_URL will auto-detect from request headers
       - NEXTAUTH_SECRET=super-secret-nextauth-key
       - DATABASE_URL=postgresql://ria_user:ria_password@postgres:5432/ria_db
       - REDIS_URL=redis://redis:6379
       - NEXT_PUBLIC_USE_MOCK_DATA=false
+      - NEXT_PUBLIC_API_BASE_URL=/api
     depends_on:
       postgres:
         condition: service_healthy

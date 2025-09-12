@@ -97,7 +97,7 @@ export const useFinanceStore = create<FinanceStore>()(
         });
         
         try {
-          const response = await invoiceRepository.findAll(get().filters);
+          const response = await invoiceRepository.instance.findAll(get().filters);
           set(state => {
             state.invoices = response.data;
             state.invoicesLoading = false;
@@ -117,7 +117,7 @@ export const useFinanceStore = create<FinanceStore>()(
         });
         
         try {
-          const invoice = await invoiceRepository.findById(id);
+          const invoice = await invoiceRepository.instance.findById(id);
           set(state => {
             state.currentInvoice = invoice;
             state.invoicesLoading = false;
@@ -132,7 +132,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       createInvoice: async (invoice: CreateInvoiceDTO) => {
         try {
-          const newInvoice = await invoiceRepository.create(invoice);
+          const newInvoice = await invoiceRepository.instance.create(invoice);
           set(state => {
             state.invoices.push(newInvoice);
           });
@@ -144,7 +144,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       updateInvoice: async (id: string, updates: UpdateInvoiceDTO) => {
         try {
-          const updatedInvoice = await invoiceRepository.update(id, updates);
+          const updatedInvoice = await invoiceRepository.instance.update(id, updates);
           set(state => {
             const index = state.invoices.findIndex(i => i.id === id);
             if (index !== -1) {
@@ -161,7 +161,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       deleteInvoice: async (id: string) => {
         try {
-          await invoiceRepository.delete(id);
+          await invoiceRepository.instance.delete(id);
           set(state => {
             state.invoices = state.invoices.filter(i => i.id !== id);
             if (state.currentInvoice?.id === id) {
@@ -175,7 +175,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       markInvoiceAsPaid: async (id: string) => {
         try {
-          const updatedInvoice = await invoiceRepository.markAsPaid(id);
+          const updatedInvoice = await invoiceRepository.instance.markAsPaid(id);
           set(state => {
             const index = state.invoices.findIndex(i => i.id === id);
             if (index !== -1) {
@@ -192,7 +192,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       sendInvoice: async (id: string) => {
         try {
-          await invoiceRepository.sendToClient(id);
+          await invoiceRepository.instance.sendToClient(id);
           await get().updateInvoice(id, { status: 'sent' });
         } catch (error) {
           throw error;
@@ -207,7 +207,7 @@ export const useFinanceStore = create<FinanceStore>()(
         });
         
         try {
-          const response = await transactionRepository.findAll(get().filters);
+          const response = await transactionRepository.instance.findAll(get().filters);
           set(state => {
             state.transactions = response.data;
             state.transactionsLoading = false;
@@ -227,7 +227,7 @@ export const useFinanceStore = create<FinanceStore>()(
         });
         
         try {
-          const transaction = await transactionRepository.findById(id);
+          const transaction = await transactionRepository.instance.findById(id);
           set(state => {
             state.currentTransaction = transaction;
             state.transactionsLoading = false;
@@ -242,7 +242,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       createTransaction: async (transaction: CreateTransactionDTO) => {
         try {
-          const newTransaction = await transactionRepository.create(transaction);
+          const newTransaction = await transactionRepository.instance.create(transaction);
           set(state => {
             state.transactions.push(newTransaction);
           });
@@ -254,7 +254,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       updateTransaction: async (id: string, updates: UpdateTransactionDTO) => {
         try {
-          const updatedTransaction = await transactionRepository.update(id, updates);
+          const updatedTransaction = await transactionRepository.instance.update(id, updates);
           set(state => {
             const index = state.transactions.findIndex(t => t.id === id);
             if (index !== -1) {
@@ -271,7 +271,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       deleteTransaction: async (id: string) => {
         try {
-          await transactionRepository.delete(id);
+          await transactionRepository.instance.delete(id);
           set(state => {
             state.transactions = state.transactions.filter(t => t.id !== id);
             if (state.currentTransaction?.id === id) {
@@ -285,7 +285,7 @@ export const useFinanceStore = create<FinanceStore>()(
       
       reconcileTransaction: async (id: string) => {
         try {
-          const updatedTransaction = await transactionRepository.reconcile(id);
+          const updatedTransaction = await transactionRepository.instance.reconcile(id);
           set(state => {
             const index = state.transactions.findIndex(t => t.id === id);
             if (index !== -1) {
@@ -308,7 +308,7 @@ export const useFinanceStore = create<FinanceStore>()(
         });
         
         try {
-          const stats = await financeStatsRepository.getOverview();
+          const stats = await financeStatsRepository.instance.getOverview();
           set(state => {
             state.stats = stats;
             state.statsLoading = false;

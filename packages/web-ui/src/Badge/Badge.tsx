@@ -7,6 +7,7 @@ export interface BadgeProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   rounded?: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 export function Badge({
@@ -15,6 +16,7 @@ export function Badge({
   size = 'md',
   rounded = false,
   className,
+  onClick,
 }: BadgeProps) {
   const baseStyles = 'inline-flex items-center font-medium transition-colors';
   
@@ -41,8 +43,10 @@ export function Badge({
         variants[variant],
         sizes[size],
         rounded ? 'rounded-full' : 'rounded',
+        onClick && 'cursor-pointer hover:opacity-80',
         className
       )}
+      onClick={onClick}
     >
       {children}
     </span>

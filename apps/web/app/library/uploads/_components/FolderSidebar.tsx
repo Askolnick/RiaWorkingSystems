@@ -58,7 +58,8 @@ export default function FolderSidebar() {
           className={`w-full px-3 py-2 rounded-lg flex items-center justify-between hover:bg-gray-100 transition-colors cursor-pointer ${
             selected === folder.id ? 'bg-blue-50 text-blue-600' : ''
           }`}
-          style={{ paddingLeft: `${12 + level * 20}px` }}
+          style={{ '--indent': `${12 + level * 20}px` } as React.CSSProperties & { '--indent': string }}
+          data-folder-indent
           onClick={() => setSelected(folder.id)}
         >
           <div className="flex items-center gap-2">
@@ -100,7 +101,7 @@ export default function FolderSidebar() {
       <div className="border-t pt-4">
         <div className="text-xs text-gray-500 mb-2">Storage Used</div>
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div className="bg-blue-600 h-2 rounded-full" style={{ width: '67%' }}></div>
+          <div className="bg-blue-600 h-2 rounded-full w-2/3"></div>
         </div>
         <div className="text-xs text-gray-600 mt-1">6.7 GB of 10 GB</div>
       </div>

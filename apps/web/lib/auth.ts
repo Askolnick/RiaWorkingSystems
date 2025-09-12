@@ -3,27 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { User } from '@ria/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-
-// This would typically be in a database
-// For now, using a simple in-memory store for demo purposes
-const users: Array<{ id: string; email: string; name: string; password: string; tenantId: string; roles: string[] }> = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    name: 'Admin User',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    tenantId: 'tenant-1',
-    roles: ['admin']
-  },
-  {
-    id: '2',
-    email: 'user@example.com',
-    name: 'Regular User',
-    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-    tenantId: 'tenant-1',
-    roles: ['user']
-  }
-];
+import { prisma } from '@ria/db';
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'fallback-secret-key';
 
@@ -40,28 +20,37 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Find user in our simple store
-        const user = users.find(u => u.email === credentials.email);
-        
-        if (!user) {
+        try {
+          // Find user in database
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
+          
+          if (!user) {
+            return null;
+          }
+
+          // Verify password
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+          
+          if (!isValidPassword) {
+            return null;
+          }
+
+          // Return user object that will be encoded in the JWT
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.displayName,
+            // For now, using a default tenant ID
+            tenantId: 'default-tenant',
+            // For now, assigning default user role
+            roles: ['user'],
+          };
+        } catch (error) {
+          console.error('Auth error:', error);
           return null;
         }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(credentials.password, user.password);
-        
-        if (!isValidPassword) {
-          return null;
-        }
-
-        // Return user object that will be encoded in the JWT
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          tenantId: user.tenantId,
-          roles: user.roles,
-        };
       }
     })
   ],
@@ -126,10 +115,13 @@ export async function verifyJWT(token: string): Promise<any> {
   }
 }
 
-// Mock user registration function
+// User registration function using Prisma
 export async function registerUser(email: string, password: string, name: string) {
   // Check if user already exists
-  const existingUser = users.find(u => u.email === email);
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+  
   if (existingUser) {
     throw new Error('User already exists');
   }
@@ -137,23 +129,21 @@ export async function registerUser(email: string, password: string, name: string
   // Hash password
   const hashedPassword = await hashPassword(password);
 
-  // Create new user
-  const newUser = {
-    id: Math.random().toString(36).substr(2, 9),
-    email,
-    name,
-    password: hashedPassword,
-    tenantId: 'tenant-1',
-    roles: ['user']
-  };
-
-  users.push(newUser);
+  // Create new user in database
+  const newUser = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      displayName: name,
+    },
+  });
 
   return {
     id: newUser.id,
     email: newUser.email,
-    name: newUser.name,
-    tenantId: newUser.tenantId,
-    roles: newUser.roles,
+    name: newUser.displayName,
+    // For now, using default values
+    tenantId: 'default-tenant',
+    roles: ['user'],
   };
 }

@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LibraryTabs from '../_components/LibraryTabs';
-import { useLibraryStore, useUIStore } from '@ria/client';
+import { useLibraryStore } from '@ria/client'
+import { useUIStore } from '@ria/client';
 import { 
   Card, 
   CardHeader, 

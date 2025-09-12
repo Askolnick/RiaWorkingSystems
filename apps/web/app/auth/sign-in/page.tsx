@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 import { Input, Button } from '@ria/web-ui';
-import { auth } from '@ria/client';
 import { ROUTES } from '@ria/utils';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Enhanced sign-in page that uses the shared Input and Button components.
 // It uses the auth client to persist sessions. If a session
@@ -15,16 +16,9 @@ export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    auth.getSession().then((session) => {
-      if (session) {
-        router.push(ROUTES.PORTAL as any);
-      }
-    });
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,10 +26,21 @@ export default function SignInPage() {
     setError(null);
     
     try {
-      await auth.signIn(email, password);
-      router.push(ROUTES.PORTAL as any);
+      // Use NextAuth signIn
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('Invalid email or password');
+      } else if (result?.ok) {
+        // Successful login, redirect to portal
+        router.push(ROUTES.PORTAL as any);
+      }
     } catch (err) {
-      setError('Invalid email or password');
+      setError('An error occurred during sign in');
     } finally {
       setIsLoading(false);
     }
@@ -50,10 +55,10 @@ export default function SignInPage() {
           </h2>
           <div className="mt-4 p-4 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-800 text-center">
-              <strong>Test Credentials:</strong> Use any email/password combination to sign in (demo mode)
+              <strong>Welcome!</strong> Please sign in with your account credentials
             </p>
             <p className="text-xs text-blue-600 text-center mt-1">
-              Example: test@example.com / password123
+              Don't have an account? <Link href={ROUTES.SIGN_UP} className="underline">Sign up here</Link>
             </p>
           </div>
         </div>
@@ -87,18 +92,29 @@ export default function SignInPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full"
+                  className="w-full pr-10"
                   disabled={isLoading}
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
               </div>
             </div>
           </div>

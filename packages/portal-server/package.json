@@ -1,0 +1,9 @@
+{
+  "name": "@ria/portal-server",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@ria/db": "workspace:*",
+    "@ria/utils": "workspace:*"
+  }
+}

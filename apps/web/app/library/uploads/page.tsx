@@ -1,10 +1,24 @@
 "use client";
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useUploadsStore } from '@ria/client';
 import { Button, Input, LoadingSpinner, ErrorAlert } from '@ria/web-ui';
-import LibraryTabs from '../_components/LibraryTabs';
-import FolderSidebar from './_components/FolderSidebar';
-import FileGrid from './_components/FileGrid';
+
+const LibraryTabs = dynamic(() => import('../_components/LibraryTabs'), {
+  loading: () => <div className="border-b mb-3 h-12 animate-pulse bg-gray-100 rounded" />
+});
+
+const FolderSidebar = dynamic(() => import('./_components/FolderSidebar'), {
+  loading: () => <div className="w-64 bg-white border-r animate-pulse h-96" />
+});
+
+const FileGrid = dynamic(() => import('./_components/FileGrid'), {
+  loading: () => <div className="flex-1 p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    {Array.from({ length: 12 }).map((_, i) => (
+      <div key={i} className="bg-gray-100 aspect-square rounded animate-pulse" />
+    ))}
+  </div>
+});
 
 export default function UploadsPage() {
   const { 
@@ -120,7 +134,8 @@ export default function UploadsPage() {
                   <div className="w-32 bg-gray-200 rounded-full h-2">
                     <div 
                       className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${progress.progress}%` }}
+                      style={{ '--progress': `${progress.progress}%` } as React.CSSProperties & { '--progress': string }}
+                      data-progress-bar
                     />
                   </div>
                   <span className="text-xs text-gray-500">{progress.progress}%</span>

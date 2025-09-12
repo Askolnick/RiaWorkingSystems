@@ -1,96 +1,95 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { Card, Button, Badge, Input, Select } from '@ria/web-ui';
+import { useInvoicesStore } from '@ria/client';
+import { Card, Button, Badge, Input, Select, LoadingCard, Alert, ErrorBoundary } from '@ria/web-ui';
 import { ROUTES } from '@ria/utils';
+import type { InvoiceStatus } from '@ria/invoices-server';
 
 export default function FinanceInvoicesPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const {
+    invoices,
+    loading,
+    error,
+    stats,
+    filters,
+    sort,
+    currentPage,
+    totalPages,
+    selectedInvoices,
+    fetchInvoices,
+    fetchStats,
+    setFilters,
+    clearFilters,
+    setSort,
+    setPage,
+    selectInvoice,
+    deselectInvoice,
+    selectAllInvoices,
+    clearSelection,
+    clearError,
+    sendInvoice,
+    markAsPaid,
+    deleteInvoice
+  } = useInvoicesStore();
 
-  // Mock invoice data - in real app this would come from API
-  const invoices = [
-    { 
-      id: 'INV-2025-001', 
-      client: 'ABC Corporation', 
-      amount: '$5,200.00', 
-      status: 'Paid', 
-      dueDate: '2025-01-30',
-      issueDate: '2025-01-15',
-      description: 'Web Development Services'
-    },
-    { 
-      id: 'INV-2025-002', 
-      client: 'XYZ Limited', 
-      amount: '$3,750.00', 
-      status: 'Pending', 
-      dueDate: '2025-02-15',
-      issueDate: '2025-01-16',
-      description: 'Consulting Services'
-    },
-    { 
-      id: 'INV-2025-003', 
-      client: 'Tech Startup Inc', 
-      amount: '$8,900.00', 
-      status: 'Overdue', 
-      dueDate: '2025-01-10',
-      issueDate: '2025-12-26',
-      description: 'Software Development'
-    },
-    { 
-      id: 'INV-2025-004', 
-      client: 'Design Studio LLC', 
-      amount: '$2,100.00', 
-      status: 'Draft', 
-      dueDate: '2025-02-28',
-      issueDate: '2025-01-18',
-      description: 'UI/UX Design Services'
-    },
-    { 
-      id: 'INV-2025-005', 
-      client: 'Marketing Agency', 
-      amount: '$4,500.00', 
-      status: 'Sent', 
-      dueDate: '2025-02-20',
-      issueDate: '2025-01-20',
-      description: 'Digital Marketing Campaign'
-    },
-  ];
+  useEffect(() => {
+    fetchInvoices();
+    fetchStats();
+  }, [fetchInvoices, fetchStats]);
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusVariant = (status: InvoiceStatus) => {
+    switch (status) {
       case 'paid': return 'success';
-      case 'pending': return 'warning';
-      case 'sent': return 'secondary';
+      case 'sent': 
+      case 'viewed': return 'secondary';
+      case 'partial': return 'warning';
       case 'overdue': return 'error';
       case 'draft': return 'secondary';
+      case 'cancelled': return 'secondary';
       default: return 'secondary';
     }
   };
 
-  const totalAmount = invoices.reduce((sum, invoice) => {
-    return sum + parseFloat(invoice.amount.replace('$', '').replace(',', ''));
-  }, 0);
+  const handleStatusChange = (value: string) => {
+    if (value === 'all') {
+      setFilters({ status: undefined });
+    } else {
+      setFilters({ status: value as InvoiceStatus });
+    }
+  };
 
-  const paidAmount = invoices
-    .filter(inv => inv.status === 'Paid')
-    .reduce((sum, invoice) => {
-      return sum + parseFloat(invoice.amount.replace('$', '').replace(',', ''));
-    }, 0);
+  const handleSearchChange = (value: string) => {
+    setFilters({ search: value || undefined });
+  };
 
-  const outstandingAmount = totalAmount - paidAmount;
+  const handleInvoiceAction = async (action: string, invoiceId: string) => {
+    try {
+      switch (action) {
+        case 'send':
+          await sendInvoice(invoiceId);
+          break;
+        case 'mark_paid':
+          await markAsPaid(invoiceId);
+          break;
+        case 'delete':
+          if (confirm('Are you sure you want to delete this invoice?')) {
+            await deleteInvoice(invoiceId);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Invoice action failed:', error);
+    }
+  };
+
+  if (loading.invoices && invoices.length === 0) return <LoadingCard />;
+  if (error) return <Alert type="error" onClose={clearError}>{error}</Alert>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -116,41 +115,54 @@ export default function FinanceInvoicesPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Invoiced</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  ${totalAmount.toLocaleString()}
-                </p>
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {stats.totalInvoices}
+                  </p>
+                </div>
+                <div className="text-2xl">📄</div>
               </div>
-              <div className="text-3xl text-blue-500">📄</div>
-            </div>
-          </Card>
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Paid</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">
-                  ${paidAmount.toLocaleString()}
-                </p>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                  <p className="text-2xl font-bold text-green-600 mt-1">
+                    ${stats.totalRevenue.toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-2xl">💰</div>
               </div>
-              <div className="text-3xl text-green-500">✅</div>
-            </div>
-          </Card>
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Outstanding</p>
-                <p className="text-2xl font-bold text-orange-600 mt-1">
-                  ${outstandingAmount.toLocaleString()}
-                </p>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                  <p className="text-2xl font-bold text-orange-600 mt-1">
+                    ${stats.totalOutstanding.toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-2xl">⏳</div>
               </div>
-              <div className="text-3xl text-orange-500">⏳</div>
-            </div>
-          </Card>
-        </div>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Overdue</p>
+                  <p className="text-2xl font-bold text-red-600 mt-1">
+                    ${stats.totalOverdueAmount.toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-2xl">⚠️</div>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="p-6 mb-6">
@@ -158,19 +170,24 @@ export default function FinanceInvoicesPage() {
             <div className="flex-1">
               <Input
                 placeholder="Search invoices by client, number, or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={filters.search || ''}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full"
               />
             </div>
             <div className="w-full sm:w-48">
-              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <Select 
+                value={filters.status || 'all'} 
+                onChange={(e) => handleStatusChange(e.target.value)}
+              >
                 <option value="all">All Status</option>
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
-                <option value="pending">Pending</option>
+                <option value="viewed">Viewed</option>
+                <option value="partial">Partial</option>
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
+                <option value="cancelled">Cancelled</option>
               </Select>
             </div>
           </div>
@@ -206,45 +223,56 @@ export default function FinanceInvoicesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredInvoices.length === 0 ? (
+                {invoices.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                      No invoices match your search criteria.
+                      {loading.invoices ? 'Loading invoices...' : 'No invoices found.'}
                     </td>
                   </tr>
                 ) : (
-                  filteredInvoices.map((invoice) => (
+                  invoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`${ROUTES.FINANCE_INVOICES}/${invoice.id}` as any} className="text-blue-600 hover:underline font-medium">
-                          {invoice.id}
+                        <Link href={`/finance/invoices/${invoice.id}`} className="text-blue-600 hover:underline font-medium">
+                          {invoice.number}
                         </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {invoice.client}
+                        {invoice.clientName}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                        {invoice.description}
+                        {invoice.description || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {invoice.amount}
+                        ${invoice.total.toLocaleString()} {invoice.currency}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge variant={getStatusVariant(invoice.status)} size="sm">
-                          {invoice.status}
+                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {invoice.dueDate}
+                        {new Date(invoice.dueDate).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          <Button variant="ghost" size="sm">
-                            Edit
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleInvoiceAction('send', invoice.id)}
+                            disabled={loading.sending}
+                          >
+                            {invoice.status === 'draft' ? 'Send' : 'Resend'}
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            Send
-                          </Button>
+                          {invoice.status !== 'paid' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleInvoiceAction('mark_paid', invoice.id)}
+                            >
+                              Mark Paid
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -255,20 +283,34 @@ export default function FinanceInvoicesPage() {
           </div>
         </Card>
 
-        {filteredInvoices.length > 0 && (
+        {invoices.length > 0 && (
           <div className="mt-4 flex justify-between items-center text-sm text-gray-500">
-            <span>Showing {filteredInvoices.length} of {invoices.length} invoices</span>
+            <span>
+              Showing page {currentPage} of {totalPages} 
+              ({invoices.length} invoices)
+            </span>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage <= 1}
+                onClick={() => setPage(currentPage - 1)}
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage(currentPage + 1)}
+              >
                 Next
               </Button>
             </div>
           </div>
         )}
       </main>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

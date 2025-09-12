@@ -14,6 +14,7 @@ export default function LibraryTabs() {
     { href: ROUTES.LIBRARY_WIKI, label: 'Wiki' },
     { href: ROUTES.LIBRARY_LEARNING, label: 'Learning' },
     { href: ROUTES.LIBRARY_UPLOADS, label: 'Uploads' },
+    { href: ROUTES.LIBRARY_SECTIONS, label: 'Sections' },
   ];
   return (
     <nav className="border-b mb-3">

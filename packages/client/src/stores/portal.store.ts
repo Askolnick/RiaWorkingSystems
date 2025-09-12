@@ -1,199 +1,148 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { portalRepository } from '../repositories/portal.repository';
+import type { DashboardLayout, WidgetInstance } from '@ria/portal-server';
 
-interface DashboardStats {
-  activeClients: number;
-  pendingTasks: number;
-  aumThisMonth: string;
-  recentActivities: Activity[];
+interface PortalState {
+  currentLayout: DashboardLayout | null;
+  widgets: WidgetInstance[];
+  loading: boolean;
+  saving: boolean;
+  error: string | null;
+  selectedWidget: WidgetInstance | null;
+  isEditing: boolean;
 }
 
-interface Activity {
-  id: string;
-  type: 'task' | 'client' | 'finance' | 'document';
-  title: string;
-  description: string;
-  timestamp: string;
-  status?: 'completed' | 'pending' | 'in-progress';
+interface PortalActions {
+  loadLayout: (name?: string, userId?: string) => Promise<void>;
+  saveLayout: (name?: string, userId?: string) => Promise<void>;
+  addWidget: (widget: Omit<WidgetInstance, 'id'>) => void;
+  updateWidget: (id: string, updates: Partial<WidgetInstance>) => void;
+  removeWidget: (id: string) => void;
+  updateWidgets: (widgets: WidgetInstance[]) => void;
+  setSelectedWidget: (widget: WidgetInstance | null) => void;
+  setEditing: (editing: boolean) => void;
+  clearError: () => void;
 }
 
-interface Module {
-  name: string;
-  href: string;
-  icon: string;
-  description: string;
-  lastAccessed?: string;
-  isEnabled: boolean;
-}
-
-interface PortalStore {
-  // Dashboard data
-  stats: DashboardStats;
-  statsLoading: boolean;
-  statsError: string | null;
-  
-  // Modules
-  modules: Module[];
-  
-  // Activities
-  activities: Activity[];
-  activitiesLoading: boolean;
-  
-  // User preferences
-  preferences: {
-    dashboardLayout: 'grid' | 'list';
-    moduleOrder: string[];
-    showStats: boolean;
-  };
-  
-  // Actions
-  fetchStats: () => Promise<void>;
-  fetchActivities: () => Promise<void>;
-  updatePreferences: (prefs: Partial<PortalStore['preferences']>) => void;
-  markActivityAsRead: (id: string) => void;
-  toggleModuleVisibility: (moduleName: string) => void;
-}
-
-// Mock data generators
-const generateMockStats = (): DashboardStats => ({
-  activeClients: 24,
-  pendingTasks: 12,
-  aumThisMonth: '$2.1M',
-  recentActivities: [
-    {
-      id: '1',
-      type: 'task',
-      title: 'Client Meeting Scheduled',
-      description: 'Meeting with John Doe scheduled for tomorrow',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      status: 'pending'
-    },
-    {
-      id: '2',
-      type: 'finance',
-      title: 'Invoice Generated',
-      description: 'Invoice #INV-2024-001 generated for $5,000',
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      status: 'completed'
-    },
-    {
-      id: '3',
-      type: 'document',
-      title: 'Document Uploaded',
-      description: 'Client portfolio document uploaded to library',
-      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      status: 'completed'
-    },
-    {
-      id: '4',
-      type: 'client',
-      title: 'New Client Onboarded',
-      description: 'Jane Smith completed onboarding process',
-      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-      status: 'completed'
-    }
-  ]
-});
-
-const defaultModules: Module[] = [
-  { name: 'Messaging', href: '/messaging', icon: '💬', description: 'Client communications and internal messaging', isEnabled: true },
-  { name: 'Tasks', href: '/tasks', icon: '✅', description: 'Task management and workflow tracking', isEnabled: true },
-  { name: 'Library', href: '/library', icon: '📚', description: 'Document library and knowledge base', isEnabled: true },
-  { name: 'Insights', href: '/insights', icon: '📊', description: 'Analytics and business intelligence', isEnabled: true },
-  { name: 'Finance', href: '/finance', icon: '💰', description: 'Financial management and accounting', isEnabled: true },
-  { name: 'Product', href: '/product', icon: '🛠️', description: 'Product and service management', isEnabled: true },
-  { name: 'Campaigns', href: '/campaigns', icon: '📢', description: 'Marketing campaigns and outreach', isEnabled: true },
-  { name: 'Admin', href: '/admin', icon: '⚙️', description: 'System administration and user management', isEnabled: true },
-  { name: 'Settings', href: '/settings', icon: '🔧', description: 'Account and application settings', isEnabled: true },
-];
-
-export const usePortalStore = create<PortalStore>()(
+export const usePortalStore = create<PortalState & PortalActions>()(
   devtools(
     immer((set, get) => ({
-      // Initial state
-      stats: generateMockStats(),
-      statsLoading: false,
-      statsError: null,
-      
-      modules: defaultModules,
-      
-      activities: generateMockStats().recentActivities,
-      activitiesLoading: false,
-      
-      preferences: {
-        dashboardLayout: 'grid',
-        moduleOrder: defaultModules.map(m => m.name),
-        showStats: true,
-      },
-      
-      // Actions
-      fetchStats: async () => {
+      currentLayout: null,
+      widgets: [],
+      loading: false,
+      saving: false,
+      error: null,
+      selectedWidget: null,
+      isEditing: false,
+
+      loadLayout: async (name = 'default', userId) => {
         set(state => {
-          state.statsLoading = true;
-          state.statsError = null;
+          state.loading = true;
+          state.error = null;
         });
-        
+
         try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const newStats = generateMockStats();
+          const layout = await portalRepository.instance.getLayout(name, userId);
           set(state => {
-            state.stats = newStats;
-            state.statsLoading = false;
+            if (layout) {
+              state.currentLayout = layout;
+              state.widgets = layout.widgets;
+            } else {
+              const defaultLayout: DashboardLayout = {
+                id: 'temp',
+                name,
+                tenantId: 'demo-tenant',
+                userId: userId || null,
+                widgets: [],
+                createdAt: new Date(),
+                updatedAt: new Date()
+              };
+              state.currentLayout = defaultLayout;
+              state.widgets = [];
+            }
+            state.loading = false;
           });
         } catch (error) {
           set(state => {
-            state.statsError = error instanceof Error ? error.message : 'Failed to fetch stats';
-            state.statsLoading = false;
+            state.error = error instanceof Error ? error.message : 'Failed to load layout';
+            state.loading = false;
           });
         }
       },
-      
-      fetchActivities: async () => {
-        set(state => {
-          state.activitiesLoading = true;
-        });
-        
+
+      saveLayout: async (name, userId) => {
+        const currentLayout = get().currentLayout;
+        if (!currentLayout) return;
+
+        set(state => { state.saving = true; });
+
         try {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          const activities = generateMockStats().recentActivities;
+          const layoutData = {
+            name: name || currentLayout.name,
+            userId: userId !== undefined ? userId : currentLayout.userId,
+            widgets: get().widgets
+          };
+          const savedLayout = await portalRepository.instance.saveLayout(layoutData);
           set(state => {
-            state.activities = activities;
-            state.activitiesLoading = false;
+            state.currentLayout = savedLayout;
+            state.saving = false;
           });
         } catch (error) {
           set(state => {
-            state.activitiesLoading = false;
+            state.error = error instanceof Error ? error.message : 'Failed to save layout';
+            state.saving = false;
           });
-          console.error('Failed to fetch activities:', error);
         }
       },
-      
-      updatePreferences: (prefs: Partial<PortalStore['preferences']>) => {
+
+      addWidget: (widget) => {
         set(state => {
-          state.preferences = { ...state.preferences, ...prefs };
+          const newWidget: WidgetInstance = {
+            ...widget,
+            id: `widget-${Date.now()}`
+          };
+          state.widgets.push(newWidget);
         });
       },
-      
-      markActivityAsRead: (id: string) => {
+
+      updateWidget: (id, updates) => {
         set(state => {
-          const activity = state.activities.find(a => a.id === id);
-          if (activity) {
-            // In a real app, this would update the read status
-            console.log(`Marked activity ${id} as read`);
+          const index = state.widgets.findIndex(w => w.id === id);
+          if (index >= 0) {
+            state.widgets[index] = { ...state.widgets[index], ...updates };
           }
         });
       },
-      
-      toggleModuleVisibility: (moduleName: string) => {
+
+      removeWidget: (id) => {
         set(state => {
-          const module = state.modules.find(m => m.name === moduleName);
-          if (module) {
-            module.isEnabled = !module.isEnabled;
-          }
+          state.widgets = state.widgets.filter(w => w.id !== id);
+        });
+      },
+
+      updateWidgets: (widgets) => {
+        set(state => {
+          state.widgets = widgets;
+        });
+      },
+
+      setSelectedWidget: (widget) => {
+        set(state => {
+          state.selectedWidget = widget;
+        });
+      },
+
+      setEditing: (editing) => {
+        set(state => {
+          state.isEditing = editing;
+        });
+      },
+
+      clearError: () => {
+        set(state => {
+          state.error = null;
         });
       },
     }))

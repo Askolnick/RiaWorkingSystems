@@ -398,13 +398,10 @@ class RefactorAgent {
   }
 
   async applyRefactoring(result: RefactorResult): Promise<void> {
-    // For safety, only add comments to the original file instead of breaking it apart
-    const originalPath = result.originalFile;
-    const backupPath = `${originalPath}.backup`;
+    // Git-first safety: commit current state before making changes
+    await this.ensureGitSafety();
     
-    // Create backup
-    await fs.copyFile(originalPath, backupPath);
-    console.log(`📋 Backup created: ${backupPath}`);
+    const originalPath = result.originalFile;
     
     // Write suggestions as comments to the original file
     await fs.writeFile(originalPath, result.mainFileCode, 'utf-8');
@@ -412,6 +409,25 @@ class RefactorAgent {
     
     console.log(`📝 Refactoring suggestions for ${result.originalFile}:`);
     result.suggestions.forEach(s => console.log(`   - ${s}`));
+  }
+
+  private async ensureGitSafety(): Promise<void> {
+    try {
+      const { execSync } = await import('child_process');
+      const status = execSync('git status --porcelain', { encoding: 'utf-8' });
+      
+      if (status.trim()) {
+        console.log('📝 Committing changes before refactoring...');
+        execSync('git add .');
+        execSync(`git commit -m "Save before refactor agent processing
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"`);
+      }
+    } catch (error) {
+      console.warn('⚠️  Git safety check failed, proceeding with caution');
+    }
   }
 }
 

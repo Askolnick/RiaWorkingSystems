@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { cn } from '@ria/utils';
 
+// === DATA TABLE TYPES ===
 interface Column<T> {
   key: keyof T | string;
   title: string;
@@ -11,7 +13,7 @@ interface Column<T> {
   align?: 'left' | 'center' | 'right';
 }
 
-interface TableProps<T> {
+interface DataTableProps<T> {
   data: T[];
   columns: Column<T>[];
   loading?: boolean;
@@ -33,10 +35,147 @@ interface TableProps<T> {
   striped?: boolean;
 }
 
-/**
- * Data table component with sorting, pagination, and custom rendering
- */
-export function Table<T extends Record<string, any>>({
+// === PRIMITIVE TABLE TYPES ===
+interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> {
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'striped' | 'bordered';
+}
+
+interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionElement> {}
+interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {}
+
+interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  selected?: boolean;
+}
+
+interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableHeaderCellElement> {
+  sortable?: boolean;
+  sorted?: 'asc' | 'desc' | false;
+  onSort?: () => void;
+}
+
+interface TableCellProps extends React.TdHTMLAttributes<HTMLTableDataCellElement> {
+  align?: 'left' | 'center' | 'right';
+}
+
+// === UTILITY CLASSES ===
+const sizeClasses = {
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-lg',
+};
+
+const variantClasses = {
+  default: '',
+  striped: '[&_tbody_tr:nth-child(odd)]:bg-gray-50',
+  bordered: 'border border-gray-200',
+};
+
+const cellPaddingClasses = {
+  sm: 'px-3 py-2',
+  md: 'px-4 py-3',
+  lg: 'px-6 py-4',
+};
+
+// === PRIMITIVE TABLE COMPONENTS ===
+export const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ size = 'md', variant = 'default', className, ...props }, ref) => {
+    const classes = cn(
+      'min-w-full',
+      sizeClasses[size],
+      variantClasses[variant],
+      className
+    );
+
+    return (
+      <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+        <table ref={ref} className={classes} {...props} />
+      </div>
+    );
+  }
+);
+Table.displayName = 'Table';
+
+export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
+  ({ className, ...props }, ref) => (
+    <thead
+      ref={ref}
+      className={cn('bg-gray-50', className)}
+      {...props}
+    />
+  )
+);
+TableHeader.displayName = 'TableHeader';
+
+export const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
+  ({ className, ...props }, ref) => (
+    <tbody
+      ref={ref}
+      className={cn('divide-y divide-gray-200 bg-white', className)}
+      {...props}
+    />
+  )
+);
+TableBody.displayName = 'TableBody';
+
+export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
+  ({ className, selected, ...props }, ref) => (
+    <tr
+      ref={ref}
+      className={cn(
+        'hover:bg-gray-50 transition-colors',
+        selected && 'bg-blue-50 border-blue-200',
+        className
+      )}
+      {...props}
+    />
+  )
+);
+TableRow.displayName = 'TableRow';
+
+export const TableHead = React.forwardRef<HTMLTableHeaderCellElement, TableHeadProps>(
+  ({ className, sortable, sorted, onSort, children, ...props }, ref) => (
+    <th
+      ref={ref}
+      className={cn(
+        'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
+        sortable && 'cursor-pointer hover:bg-gray-100 select-none',
+        className
+      )}
+      onClick={sortable ? onSort : undefined}
+      {...props}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {sortable && (
+          <span className="text-gray-400">
+            {sorted === 'asc' ? '↑' : sorted === 'desc' ? '↓' : '↕'}
+          </span>
+        )}
+      </div>
+    </th>
+  )
+);
+TableHead.displayName = 'TableHead';
+
+export const TableCell = React.forwardRef<HTMLTableDataCellElement, TableCellProps>(
+  ({ className, align = 'left', ...props }, ref) => (
+    <td
+      ref={ref}
+      className={cn(
+        'px-6 py-4 whitespace-nowrap text-sm text-gray-900',
+        align === 'center' && 'text-center',
+        align === 'right' && 'text-right',
+        className
+      )}
+      {...props}
+    />
+  )
+);
+TableCell.displayName = 'TableCell';
+
+// === DATA TABLE COMPONENT ===
+export function DataTable<T extends Record<string, any>>({
   data,
   columns,
   loading = false,
@@ -48,7 +187,7 @@ export function Table<T extends Record<string, any>>({
   size = 'md',
   bordered = true,
   striped = true,
-}: TableProps<T>) {
+}: DataTableProps<T>) {
   const [sortState, setSortState] = React.useState<{
     key: string;
     direction: 'asc' | 'desc';
@@ -69,18 +208,6 @@ export function Table<T extends Record<string, any>>({
     return record[rowKey] ?? index;
   };
 
-  const sizeClasses = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
-  };
-
-  const cellPadding = {
-    sm: 'px-3 py-2',
-    md: 'px-4 py-3',
-    lg: 'px-6 py-4',
-  };
-
   if (loading) {
     return (
       <div className={`animate-pulse ${className}`}>
@@ -94,60 +221,51 @@ export function Table<T extends Record<string, any>>({
 
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <table className={`min-w-full ${sizeClasses[size]} ${bordered ? 'border border-gray-200' : ''}`}>
-        <thead className="bg-gray-50">
-          <tr>
-            {columns.map((column, index) => (
-              <th
+      <Table 
+        size={size}
+        variant={striped ? 'striped' : bordered ? 'bordered' : 'default'}
+      >
+        <TableHeader>
+          <TableRow>
+            {columns.map((column) => (
+              <TableHead
                 key={String(column.key)}
-                className={`
-                  ${cellPadding[size]}
-                  text-left font-medium text-gray-900 uppercase tracking-wider
-                  ${bordered ? 'border-b border-gray-200' : ''}
-                  ${column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''}
-                  ${column.align === 'center' ? 'text-center' : ''}
-                  ${column.align === 'right' ? 'text-right' : ''}
-                `}
-                style={{ width: column.width }}
-                onClick={() => column.sortable && handleSort(String(column.key))}
+                sortable={column.sortable}
+                sorted={
+                  sortState?.key === column.key 
+                    ? sortState.direction 
+                    : false
+                }
+                onSort={() => column.sortable && handleSort(String(column.key))}
+                className={cn(
+                  cellPaddingClasses[size],
+                  column.align === 'center' && 'text-center',
+                  column.align === 'right' && 'text-right'
+                )}
+                {...(column.width && { style: { width: column.width } })}
               >
-                <div className="flex items-center gap-1">
-                  {column.title}
-                  {column.sortable && (
-                    <span className="text-gray-400">
-                      {sortState?.key === column.key ? (
-                        sortState.direction === 'asc' ? '↑' : '↓'
-                      ) : (
-                        '↕'
-                      )}
-                    </span>
-                  )}
-                </div>
-              </th>
+                {column.title}
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {data.length === 0 ? (
-            <tr>
-              <td
+            <TableRow>
+              <TableCell
                 colSpan={columns.length}
-                className={`${cellPadding[size]} text-center text-gray-500`}
+                className={cn(cellPaddingClasses[size], 'text-center text-gray-500')}
               >
                 No data available
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ) : (
             data.map((record, index) => {
               const rowProps = onRow?.(record, index) || {};
               return (
-                <tr
+                <TableRow
                   key={getRowKey(record, index)}
-                  className={`
-                    ${striped && index % 2 === 1 ? 'bg-gray-50' : ''}
-                    ${rowProps.onClick ? 'cursor-pointer hover:bg-gray-100' : ''}
-                    ${rowProps.className || ''}
-                  `}
+                  className={rowProps.className}
                   onClick={rowProps.onClick}
                 >
                   {columns.map((column) => {
@@ -157,26 +275,21 @@ export function Table<T extends Record<string, any>>({
                       : value?.toString() || '';
 
                     return (
-                      <td
+                      <TableCell
                         key={String(column.key)}
-                        className={`
-                          ${cellPadding[size]}
-                          whitespace-nowrap
-                          ${bordered ? 'border-b border-gray-200' : ''}
-                          ${column.align === 'center' ? 'text-center' : ''}
-                          ${column.align === 'right' ? 'text-right' : ''}
-                        `}
+                        align={column.align}
+                        className={cellPaddingClasses[size]}
                       >
                         {cellContent}
-                      </td>
+                      </TableCell>
                     );
                   })}
-                </tr>
+                </TableRow>
               );
             })
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {pagination && (
         <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
@@ -235,4 +348,7 @@ export function Table<T extends Record<string, any>>({
   );
 }
 
-export default Table;
+// Re-export with legacy names for backward compatibility
+export { Table as SimpleTable };
+
+export default DataTable;

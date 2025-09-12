@@ -43,31 +43,32 @@ export default function FinancePage() {
     fetchTransactions();
   }, [fetchStats, fetchInvoices, fetchTransactions]);
 
-  const quickActions = [
-    { 
-      name: 'Create Invoice', 
-      href: `${ROUTES.FINANCE_INVOICES}/new`, 
-      icon: '📄', 
-      description: 'Generate new client invoice' 
-    },
-    { 
-      name: 'Record Expense', 
-      href: `${ROUTES.FINANCE_EXPENSES}/new`, 
-      icon: '💳', 
-      description: 'Log business expense' 
-    },
-    { 
-      name: 'Pay Bills', 
-      href: ROUTES.FINANCE_BILLS, 
-      icon: '💸', 
-      description: 'Manage outstanding bills' 
-    },
-    { 
-      name: 'View Reports', 
-      href: ROUTES.FINANCE_BALANCE_SHEET, 
-      icon: '📊', 
-      description: 'Financial statements' 
-    },
+  // TODO: Uncomment when finance modules are implemented
+  const quickActions: { name: string; href: string; icon: string; description: string }[] = [
+    // { 
+    //   name: 'Create Invoice', 
+    //   href: `/finance/invoices/new`, 
+    //   icon: '📄', 
+    //   description: 'Generate new client invoice' 
+    // },
+    // { 
+    //   name: 'Record Expense', 
+    //   href: `/finance/expenses/new`, 
+    //   icon: '💳', 
+    //   description: 'Log business expense' 
+    // },
+    // { 
+    //   name: 'Pay Bills', 
+    //   href: '/finance/bills', 
+    //   icon: '💸', 
+    //   description: 'Manage outstanding bills' 
+    // },
+    // { 
+    //   name: 'View Reports', 
+    //   href: '/finance/reports', 
+    //   icon: '📊', 
+    //   description: 'Financial statements' 
+    // },
   ];
 
   const formatCurrency = (amount: number) => {
@@ -128,12 +129,14 @@ export default function FinancePage() {
                 >
                   Export Data
                 </Button>
+{/* TODO: Uncomment when invoices module is implemented
                 <Button 
                   size="sm"
-                  onClick={() => router.push(`${ROUTES.FINANCE_INVOICES}/new`)}
+                  onClick={() => router.push('/finance/invoices/new')}
                 >
                   New Invoice
                 </Button>
+                */}
               </div>
             </div>
           </div>
@@ -224,21 +227,11 @@ export default function FinancePage() {
             <div className="lg:col-span-1">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
               <div className="space-y-3">
-                {quickActions.map((action, index) => (
-                  <Link key={index} href={action.href}>
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-blue-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="text-2xl">{action.icon}</div>
-                          <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">{action.name}</h3>
-                            <p className="text-sm text-gray-500">{action.description}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
+                <Card>
+                  <CardContent className="p-4 text-center text-gray-500">
+                    Quick actions will be available when finance modules are implemented.
+                  </CardContent>
+                </Card>
               </div>
             </div>
 
@@ -313,7 +306,7 @@ export default function FinancePage() {
 
           {/* Module Navigation */}
           <div className="mt-12">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Finance Modules</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Core Finance Modules</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Link href={ROUTES.FINANCE_INVOICES}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
@@ -348,13 +341,109 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href={ROUTES.FINANCE_BALANCE_SHEET}>
+              <Link href="/finance/accounts-receivable">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">💰</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Accounts Receivable</h3>
+                      <p className="text-sm text-gray-600">Customer accounts & collections</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+
+            <h2 className="text-lg font-semibold text-gray-900 mb-6 mt-8">Financial Reporting</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link href={ROUTES.FINANCE_REPORTS}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">
                       <div className="text-4xl mb-3">📊</div>
-                      <h3 className="font-semibold text-gray-900 mb-2">Reports</h3>
+                      <h3 className="font-semibold text-gray-900 mb-2">Reports Dashboard</h3>
                       <p className="text-sm text-gray-600">Financial statements and analytics</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/finance/income-statement">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">📈</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Income Statement</h3>
+                      <p className="text-sm text-gray-600">Revenue & expense analysis</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/finance/balance-sheet">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">⚖️</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Balance Sheet</h3>
+                      <p className="text-sm text-gray-600">Assets, liabilities & equity</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/finance/cash-flow">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">💵</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Cash Flow Statement</h3>
+                      <p className="text-sm text-gray-600">Cash movement analysis</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+
+            <h2 className="text-lg font-semibold text-gray-900 mb-6 mt-8">Financial Operations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link href={ROUTES.FINANCE_RECONCILIATION}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">🏦</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Bank Reconciliation</h3>
+                      <p className="text-sm text-gray-600">Match bank statements</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/finance/recurring-transactions">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">🔄</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Recurring Transactions</h3>
+                      <p className="text-sm text-gray-600">Automated billing & payments</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/finance/receipt-manager">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">🧾</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Receipt Manager</h3>
+                      <p className="text-sm text-gray-600">OCR & expense tracking</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href={ROUTES.FINANCE_CURRENCY}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">💱</div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Multi-Currency</h3>
+                      <p className="text-sm text-gray-600">Exchange rates & conversion</p>
                     </div>
                   </CardContent>
                 </Card>

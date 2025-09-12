@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { LibraryDoc, LibrarySection, DocKind, DocStatus } from '../library';
-import { libraryRepository, sectionRepository } from '../repositories';
+import { libraryRepository } from '../repositories';
 import type { LibraryQueryParams } from '../repositories/library.repository';
 
 export interface LibraryState {
@@ -117,7 +117,7 @@ export const useLibraryStore = create<LibraryStore>()(
             search: filters.search || undefined,
           };
           
-          const response = await libraryRepository.findAll(queryParams);
+          const response = await libraryRepository.instance.findAll(queryParams);
           
           set((state) => {
             state.documents = response.data;
@@ -140,7 +140,7 @@ export const useLibraryStore = create<LibraryStore>()(
         });
 
         try {
-          const doc = await libraryRepository.findById(id);
+          const doc = await libraryRepository.instance.findById(id);
           
           set((state) => {
             state.currentDocument = doc;
@@ -161,7 +161,7 @@ export const useLibraryStore = create<LibraryStore>()(
         });
 
         try {
-          const newDoc = await libraryRepository.create(doc);
+          const newDoc = await libraryRepository.instance.create(doc);
           
           set((state) => {
             state.documents.unshift(newDoc);
@@ -186,7 +186,7 @@ export const useLibraryStore = create<LibraryStore>()(
         });
 
         try {
-          const updatedDoc = await libraryRepository.update(id, updates);
+          const updatedDoc = await libraryRepository.instance.update(id, updates);
           
           set((state) => {
             const index = state.documents.findIndex(d => d.id === id);
@@ -214,7 +214,7 @@ export const useLibraryStore = create<LibraryStore>()(
         });
 
         try {
-          await libraryRepository.delete(id);
+          await libraryRepository.instance.delete(id);
           
           set((state) => {
             state.documents = state.documents.filter(d => d.id !== id);
@@ -239,7 +239,7 @@ export const useLibraryStore = create<LibraryStore>()(
         });
 
         try {
-          const clonedDoc = await libraryRepository.clone(id, title);
+          const clonedDoc = await libraryRepository.instance.clone(id, title);
           
           set((state) => {
             state.documents.unshift(clonedDoc);
@@ -378,7 +378,7 @@ export const useLibraryStore = create<LibraryStore>()(
 
       attachSectionToDoc: async (docId: string, sectionId: string, position?: number) => {
         try {
-          await libraryRepository.attachSection(docId, sectionId, position);
+          await libraryRepository.instance.attachSection(docId, sectionId, position);
           // Refresh current document if it's the one being modified
           if (get().currentDocument?.id === docId) {
             await get().fetchDocument(docId);
@@ -393,7 +393,7 @@ export const useLibraryStore = create<LibraryStore>()(
 
       detachSectionFromDoc: async (docId: string, sectionId: string) => {
         try {
-          await libraryRepository.detachSection(docId, sectionId);
+          await libraryRepository.instance.detachSection(docId, sectionId);
           // Refresh current document if it's the one being modified
           if (get().currentDocument?.id === docId) {
             await get().fetchDocument(docId);

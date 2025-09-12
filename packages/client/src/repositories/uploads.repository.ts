@@ -337,6 +337,24 @@ export class FolderRepository extends BaseRepository<Folder, CreateFolderDTO, Up
   }
 }
 
-// Export singleton instances
-export const fileRepository = new FileRepository();
-export const folderRepository = new FolderRepository();
+// Lazy initialization to prevent bundle bloat
+let _fileRepository: FileRepository | null = null;
+let _folderRepository: FolderRepository | null = null;
+
+export const fileRepository = {
+  get instance(): FileRepository {
+    if (!_fileRepository) {
+      _fileRepository = new FileRepository();
+    }
+    return _fileRepository;
+  }
+};
+
+export const folderRepository = {
+  get instance(): FolderRepository {
+    if (!_folderRepository) {
+      _folderRepository = new FolderRepository();
+    }
+    return _folderRepository;
+  }
+};

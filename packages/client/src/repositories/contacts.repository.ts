@@ -1,0 +1,546 @@
+import { BaseRepository, MockRepository, PaginatedResponse } from './base.repository';
+
+export interface Contact {
+  id: string;
+  tenantId: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  jobTitle?: string;
+  contactType: ContactType;
+  status: ContactStatus;
+  source?: string;
+  tags: string[];
+  addresses: ContactAddress[];
+  socialProfiles: SocialProfile[];
+  customFields: Record<string, any>;
+  notes?: string;
+  assignedTo?: string;
+  lastContactDate?: string;
+  nextFollowUpDate?: string;
+  leadScore?: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ContactType = 'lead' | 'client' | 'prospect' | 'partner' | 'vendor' | 'other';
+export type ContactStatus = 'active' | 'inactive' | 'do-not-contact' | 'qualified' | 'converted';
+
+export interface ContactAddress {
+  id: string;
+  type: AddressType;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isPrimary: boolean;
+}
+
+export type AddressType = 'home' | 'work' | 'other';
+
+export interface SocialProfile {
+  platform: SocialPlatform;
+  url: string;
+  username?: string;
+}
+
+export type SocialPlatform = 'linkedin' | 'twitter' | 'facebook' | 'instagram' | 'website' | 'other';
+
+export interface ContactInteraction {
+  id: string;
+  contactId: string;
+  tenantId: string;
+  type: InteractionType;
+  subject: string;
+  description?: string;
+  outcome?: string;
+  nextAction?: string;
+  scheduledDate?: string;
+  completedDate?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'task' | 'proposal' | 'contract' | 'other';
+
+export interface CreateContactData {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  jobTitle?: string;
+  contactType: ContactType;
+  status?: ContactStatus;
+  source?: string;
+  tags?: string[];
+  addresses?: Omit<ContactAddress, 'id'>[];
+  socialProfiles?: SocialProfile[];
+  customFields?: Record<string, any>;
+  notes?: string;
+  assignedTo?: string;
+  nextFollowUpDate?: string;
+  leadScore?: number;
+}
+
+export interface UpdateContactData extends Partial<CreateContactData> {
+  lastContactDate?: string;
+}
+
+export interface ContactFilters {
+  contactType?: ContactType;
+  status?: ContactStatus;
+  assignedTo?: string;
+  company?: string;
+  tags?: string[];
+  leadScoreMin?: number;
+  leadScoreMax?: number;
+  search?: string;
+  hasPhone?: boolean;
+  hasEmail?: boolean;
+  lastContactDateRange?: {
+    from?: string;
+    to?: string;
+  };
+}
+
+export interface ContactSort {
+  field: keyof Contact;
+  direction: 'asc' | 'desc';
+}
+
+export class ContactsRepository extends BaseRepository<Contact> {
+  protected endpoint = '/contacts';
+
+  async findFiltered(
+    filters: ContactFilters = {},
+    sort: ContactSort[] = [],
+    page = 1,
+    limit = 20
+  ): Promise<PaginatedResponse<Contact>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...Object.fromEntries(
+        Object.entries(filters).filter(([, value]) => value !== undefined && value !== '')
+      )
+    });
+
+    if (sort.length > 0) {
+      params.append('sort', JSON.stringify(sort));
+    }
+
+    return this.request('GET', `?${params.toString()}`);
+  }
+
+  async getInteractions(contactId: string): Promise<ContactInteraction[]> {
+    const response = await this.request('GET', `/${contactId}/interactions`);
+    return response.data;
+  }
+
+  async createInteraction(contactId: string, data: Omit<ContactInteraction, 'id' | 'contactId' | 'tenantId' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<ContactInteraction> {
+    return this.request('POST', `/${contactId}/interactions`, data);
+  }
+
+  async updateInteraction(contactId: string, interactionId: string, data: Partial<ContactInteraction>): Promise<ContactInteraction> {
+    return this.request('PUT', `/${contactId}/interactions/${interactionId}`, data);
+  }
+
+  async deleteInteraction(contactId: string, interactionId: string): Promise<void> {
+    return this.request('DELETE', `/${contactId}/interactions/${interactionId}`);
+  }
+
+  async getStats(): Promise<any> {
+    return this.request('GET', '/stats');
+  }
+
+  async export(options: any): Promise<Blob> {
+    return this.request('POST', '/export', options);
+  }
+
+  async import(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.request('POST', '/import', formData);
+  }
+}
+
+export class MockContactsRepository extends MockRepository<Contact> {
+  protected storageKey = 'ria_contacts';
+  protected endpoint = '/contacts';
+
+  private mockContacts: Contact[] = [
+    {
+      id: 'contact-1',
+      tenantId: 'tenant-1',
+      firstName: 'John',
+      lastName: 'Smith',
+      email: 'john.smith@example.com',
+      phone: '+1-555-0123',
+      company: 'Acme Corporation',
+      jobTitle: 'CEO',
+      contactType: 'client',
+      status: 'active',
+      source: 'referral',
+      tags: ['vip', 'enterprise'],
+      addresses: [
+        {
+          id: 'addr-1',
+          type: 'work',
+          street: '123 Business Ave',
+          city: 'New York',
+          state: 'NY',
+          postalCode: '10001',
+          country: 'USA',
+          isPrimary: true
+        }
+      ],
+      socialProfiles: [
+        {
+          platform: 'linkedin',
+          url: 'https://linkedin.com/in/johnsmith',
+          username: 'johnsmith'
+        }
+      ],
+      customFields: {
+        industry: 'Technology',
+        revenue: '$10M-50M'
+      },
+      notes: 'Long-term client with high potential for expansion',
+      assignedTo: 'user-1',
+      lastContactDate: '2024-01-15T10:00:00Z',
+      nextFollowUpDate: '2024-02-01T14:00:00Z',
+      leadScore: 95,
+      createdBy: 'user-1',
+      createdAt: '2024-01-01T08:00:00Z',
+      updatedAt: '2024-01-15T10:00:00Z'
+    },
+    {
+      id: 'contact-2',
+      tenantId: 'tenant-1',
+      firstName: 'Sarah',
+      lastName: 'Johnson',
+      email: 'sarah.johnson@techstart.com',
+      phone: '+1-555-0456',
+      company: 'TechStart Inc',
+      jobTitle: 'CTO',
+      contactType: 'prospect',
+      status: 'qualified',
+      source: 'website',
+      tags: ['tech', 'startup'],
+      addresses: [
+        {
+          id: 'addr-2',
+          type: 'work',
+          street: '456 Innovation Dr',
+          city: 'San Francisco',
+          state: 'CA',
+          postalCode: '94105',
+          country: 'USA',
+          isPrimary: true
+        }
+      ],
+      socialProfiles: [
+        {
+          platform: 'twitter',
+          url: 'https://twitter.com/sarahtech',
+          username: 'sarahtech'
+        }
+      ],
+      customFields: {
+        industry: 'Software',
+        companySize: '50-100'
+      },
+      notes: 'Interested in our enterprise solution',
+      assignedTo: 'user-2',
+      nextFollowUpDate: '2024-01-25T16:00:00Z',
+      leadScore: 78,
+      createdBy: 'user-2',
+      createdAt: '2024-01-10T14:00:00Z',
+      updatedAt: '2024-01-20T09:30:00Z'
+    },
+    {
+      id: 'contact-3',
+      tenantId: 'tenant-1',
+      firstName: 'Michael',
+      lastName: 'Brown',
+      email: 'mike.brown@consulting.com',
+      phone: '+1-555-0789',
+      company: 'Brown Consulting',
+      jobTitle: 'Managing Partner',
+      contactType: 'partner',
+      status: 'active',
+      source: 'conference',
+      tags: ['consulting', 'partnership'],
+      addresses: [
+        {
+          id: 'addr-3',
+          type: 'work',
+          street: '789 Consulting Way',
+          city: 'Chicago',
+          state: 'IL',
+          postalCode: '60601',
+          country: 'USA',
+          isPrimary: true
+        }
+      ],
+      socialProfiles: [
+        {
+          platform: 'linkedin',
+          url: 'https://linkedin.com/in/mikebrown',
+          username: 'mikebrown'
+        }
+      ],
+      customFields: {
+        industry: 'Consulting',
+        specialization: 'Digital Transformation'
+      },
+      notes: 'Potential referral partner for enterprise clients',
+      assignedTo: 'user-1',
+      lastContactDate: '2024-01-18T11:00:00Z',
+      nextFollowUpDate: '2024-02-15T10:00:00Z',
+      leadScore: 85,
+      createdBy: 'user-1',
+      createdAt: '2024-01-05T16:00:00Z',
+      updatedAt: '2024-01-18T11:00:00Z'
+    },
+    {
+      id: 'contact-4',
+      tenantId: 'tenant-1',
+      firstName: 'Emily',
+      lastName: 'Davis',
+      email: 'emily@startup.io',
+      phone: '+1-555-0321',
+      company: 'Startup.io',
+      jobTitle: 'Founder',
+      contactType: 'lead',
+      status: 'active',
+      source: 'social_media',
+      tags: ['founder', 'early-stage'],
+      addresses: [],
+      socialProfiles: [
+        {
+          platform: 'twitter',
+          url: 'https://twitter.com/emilyfounder',
+          username: 'emilyfounder'
+        }
+      ],
+      customFields: {
+        industry: 'FinTech',
+        fundingStage: 'Seed'
+      },
+      notes: 'Early-stage founder looking for advisory services',
+      assignedTo: 'user-2',
+      nextFollowUpDate: '2024-01-30T15:00:00Z',
+      leadScore: 45,
+      createdBy: 'user-2',
+      createdAt: '2024-01-20T12:00:00Z',
+      updatedAt: '2024-01-20T12:00:00Z'
+    }
+  ];
+
+  private mockInteractions: ContactInteraction[] = [
+    {
+      id: 'interaction-1',
+      contactId: 'contact-1',
+      tenantId: 'tenant-1',
+      type: 'call',
+      subject: 'Quarterly Business Review',
+      description: 'Discussed Q4 performance and 2024 goals',
+      outcome: 'Positive discussion, identified expansion opportunities',
+      nextAction: 'Prepare proposal for additional services',
+      scheduledDate: '2024-01-15T10:00:00Z',
+      completedDate: '2024-01-15T10:45:00Z',
+      createdBy: 'user-1',
+      createdAt: '2024-01-15T10:45:00Z',
+      updatedAt: '2024-01-15T10:45:00Z'
+    },
+    {
+      id: 'interaction-2',
+      contactId: 'contact-2',
+      tenantId: 'tenant-1',
+      type: 'email',
+      subject: 'Follow-up on Demo',
+      description: 'Sent additional information about enterprise features',
+      outcome: 'Client requested technical specifications',
+      nextAction: 'Schedule technical deep-dive meeting',
+      completedDate: '2024-01-20T09:30:00Z',
+      createdBy: 'user-2',
+      createdAt: '2024-01-20T09:30:00Z',
+      updatedAt: '2024-01-20T09:30:00Z'
+    }
+  ];
+
+  async findFiltered(
+    filters: ContactFilters = {},
+    sort: ContactSort[] = [],
+    page = 1,
+    limit = 20
+  ): Promise<PaginatedResponse<Contact>> {
+    await this.simulateDelay();
+    
+    let filtered = [...this.mockContacts];
+
+    // Apply filters
+    if (filters.contactType) {
+      filtered = filtered.filter(c => c.contactType === filters.contactType);
+    }
+    if (filters.status) {
+      filtered = filtered.filter(c => c.status === filters.status);
+    }
+    if (filters.assignedTo) {
+      filtered = filtered.filter(c => c.assignedTo === filters.assignedTo);
+    }
+    if (filters.company) {
+      filtered = filtered.filter(c => 
+        c.company && c.company.toLowerCase().includes(filters.company!.toLowerCase())
+      );
+    }
+    if (filters.tags && filters.tags.length > 0) {
+      filtered = filtered.filter(c => 
+        filters.tags!.some(tag => c.tags.includes(tag))
+      );
+    }
+    if (filters.leadScoreMin !== undefined) {
+      filtered = filtered.filter(c => (c.leadScore || 0) >= filters.leadScoreMin!);
+    }
+    if (filters.leadScoreMax !== undefined) {
+      filtered = filtered.filter(c => (c.leadScore || 0) <= filters.leadScoreMax!);
+    }
+    if (filters.hasPhone) {
+      filtered = filtered.filter(c => !!c.phone);
+    }
+    if (filters.hasEmail) {
+      filtered = filtered.filter(c => !!c.email);
+    }
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.firstName.toLowerCase().includes(searchLower) ||
+        c.lastName.toLowerCase().includes(searchLower) ||
+        (c.email && c.email.toLowerCase().includes(searchLower)) ||
+        (c.company && c.company.toLowerCase().includes(searchLower)) ||
+        (c.phone && c.phone.includes(filters.search!))
+      );
+    }
+
+    // Apply sorting
+    if (sort.length > 0) {
+      const sortConfig = sort[0];
+      filtered.sort((a, b) => {
+        const aVal = a[sortConfig.field];
+        const bVal = b[sortConfig.field];
+        const compare = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        return sortConfig.direction === 'desc' ? -compare : compare;
+      });
+    }
+
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = filtered.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedData,
+      total: filtered.length,
+      page,
+      limit,
+      totalPages: Math.ceil(filtered.length / limit)
+    };
+  }
+
+  async getInteractions(contactId: string): Promise<ContactInteraction[]> {
+    await this.simulateDelay();
+    return this.mockInteractions.filter(i => i.contactId === contactId);
+  }
+
+  async createInteraction(contactId: string, data: Omit<ContactInteraction, 'id' | 'contactId' | 'tenantId' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<ContactInteraction> {
+    await this.simulateDelay();
+    
+    const newInteraction: ContactInteraction = {
+      id: `interaction-${Date.now()}`,
+      contactId,
+      tenantId: 'tenant-1',
+      createdBy: 'user-1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...data
+    };
+
+    this.mockInteractions.push(newInteraction);
+    return newInteraction;
+  }
+
+  async updateInteraction(contactId: string, interactionId: string, data: Partial<ContactInteraction>): Promise<ContactInteraction> {
+    await this.simulateDelay();
+    
+    const index = this.mockInteractions.findIndex(i => i.id === interactionId && i.contactId === contactId);
+    if (index === -1) {
+      throw new Error('Interaction not found');
+    }
+
+    this.mockInteractions[index] = {
+      ...this.mockInteractions[index],
+      ...data,
+      updatedAt: new Date().toISOString()
+    };
+
+    return this.mockInteractions[index];
+  }
+
+  async deleteInteraction(contactId: string, interactionId: string): Promise<void> {
+    await this.simulateDelay();
+    
+    const index = this.mockInteractions.findIndex(i => i.id === interactionId && i.contactId === contactId);
+    if (index === -1) {
+      throw new Error('Interaction not found');
+    }
+
+    this.mockInteractions.splice(index, 1);
+  }
+
+  async getStats(): Promise<any> {
+    await this.simulateDelay();
+    
+    const totalContacts = this.mockContacts.length;
+    const contactsByType = this.mockContacts.reduce((acc, contact) => {
+      acc[contact.contactType] = (acc[contact.contactType] || 0) + 1;
+      return acc;
+    }, {} as Record<ContactType, number>);
+
+    const contactsByStatus = this.mockContacts.reduce((acc, contact) => {
+      acc[contact.status] = (acc[contact.status] || 0) + 1;
+      return acc;
+    }, {} as Record<ContactStatus, number>);
+
+    const averageLeadScore = this.mockContacts.reduce((sum, contact) => 
+      sum + (contact.leadScore || 0), 0
+    ) / totalContacts;
+
+    return {
+      totalContacts,
+      contactsByType,
+      contactsByStatus,
+      newContactsThisMonth: Math.floor(totalContacts * 0.2),
+      activeContacts: this.mockContacts.filter(c => c.status === 'active').length,
+      averageLeadScore: Math.round(averageLeadScore),
+      topCompanies: [
+        { company: 'Acme Corporation', count: 1 },
+        { company: 'TechStart Inc', count: 1 },
+        { company: 'Brown Consulting', count: 1 }
+      ],
+      recentInteractions: this.mockInteractions.slice(-5)
+    };
+  }
+
+  protected getInitialData(): Contact[] {
+    return this.mockContacts;
+  }
+}
+
+export const contactsRepository = new MockContactsRepository();

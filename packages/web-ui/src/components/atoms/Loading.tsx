@@ -110,15 +110,19 @@ export function Skeleton({
     none: '',
   };
 
-  const style: React.CSSProperties = {
-    width: width || (variant === 'circular' ? '40px' : '100%'),
-    height: height || (variant === 'text' ? '20px' : variant === 'circular' ? '40px' : '100px'),
-  };
+  const dynamicSize = width || height;
+  const widthClass = !width ? (variant === 'circular' ? 'w-10' : 'w-full') : '';
+  const heightClass = !height ? (variant === 'text' ? 'h-5' : variant === 'circular' ? 'h-10' : 'h-25') : '';
+  
+  const inlineStyles = dynamicSize ? {
+    ...(width && { width }),
+    ...(height && { height })
+  } : undefined;
 
   return (
     <div
-      className={`bg-gray-200 ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
-      style={style}
+      className={`bg-gray-200 ${variantClasses[variant]} ${animationClasses[animation]} ${widthClass} ${heightClass} ${className}`}
+      {...(inlineStyles && { style: inlineStyles })}
     />
   );
 }
@@ -144,7 +148,7 @@ export function LoadingDots({ size = 'md', color = 'bg-gray-400' }: LoadingDotsP
         <div
           key={i}
           className={`${sizeClasses[size]} ${color} rounded-full animate-bounce`}
-          style={{ animationDelay: `${i * 0.1}s` }}
+          data-delay={i}
         />
       ))}
     </div>
@@ -220,3 +224,6 @@ export function LoadingTable({ rows = 5, columns = 4 }: LoadingTableProps) {
 
 // Aliases for compatibility with existing imports
 export const LoadingSpinner = Spinner;
+
+// Default Loading component (alias for LoadingSpinner)
+export const Loading = Spinner;

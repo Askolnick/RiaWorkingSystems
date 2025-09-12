@@ -7,6 +7,12 @@ export default withAuth(
     const token = req.nextauth.token;
     const isAuth = !!token;
     const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
+    const isPublicPage = req.nextUrl.pathname === '/' || req.nextUrl.pathname === '/landing';
+
+    // Allow public pages without authentication
+    if (isPublicPage) {
+      return null;
+    }
 
     if (isAuthPage) {
       if (isAuth) {
@@ -44,8 +50,10 @@ export default withAuth(
         // This callback runs for every request
         // Return true to allow access, false to redirect to sign-in
         
-        // Allow access to auth pages and API routes without authentication
+        // Allow access to public pages, auth pages and API routes without authentication
         if (
+          req.nextUrl.pathname === '/' ||  // Allow homepage
+          req.nextUrl.pathname === '/landing' ||  // Allow landing page
           req.nextUrl.pathname.startsWith('/auth') ||
           req.nextUrl.pathname.startsWith('/api/auth') ||
           req.nextUrl.pathname === '/_next' ||

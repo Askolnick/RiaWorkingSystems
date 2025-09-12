@@ -100,7 +100,7 @@ export const useUploadsStore = create<UploadsStore>()(
         });
         
         try {
-          const response = await fileRepository.findAll(params || get().searchParams);
+          const response = await fileRepository.instance.findAll(params || get().searchParams);
           set(state => {
             state.files = response.data;
             state.filesLoading = false;
@@ -120,7 +120,7 @@ export const useUploadsStore = create<UploadsStore>()(
         });
         
         try {
-          const file = await fileRepository.findById(id);
+          const file = await fileRepository.instance.findById(id);
           set(state => {
             state.currentFile = file;
             state.filesLoading = false;
@@ -162,7 +162,7 @@ export const useUploadsStore = create<UploadsStore>()(
             }
           }
           
-          const newFile = await fileRepository.uploadFile(fileData);
+          const newFile = await fileRepository.instance.uploadFile(fileData);
           
           set(state => {
             state.files.unshift(newFile);
@@ -196,7 +196,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       updateFile: async (id: string, updates: UpdateFileDTO) => {
         try {
-          const updatedFile = await fileRepository.update(id, updates);
+          const updatedFile = await fileRepository.instance.update(id, updates);
           set(state => {
             const index = state.files.findIndex(f => f.id === id);
             if (index !== -1) {
@@ -213,7 +213,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       deleteFile: async (id: string) => {
         try {
-          await fileRepository.deleteFile(id);
+          await fileRepository.instance.deleteFile(id);
           set(state => {
             state.files = state.files.filter(f => f.id !== id);
             state.selectedFiles = state.selectedFiles.filter(fid => fid !== id);
@@ -228,7 +228,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       deleteFiles: async (ids: string[]) => {
         try {
-          await Promise.all(ids.map(id => fileRepository.deleteFile(id)));
+          await Promise.all(ids.map(id => fileRepository.instance.deleteFile(id)));
           set(state => {
             state.files = state.files.filter(f => !ids.includes(f.id));
             state.selectedFiles = state.selectedFiles.filter(id => !ids.includes(id));
@@ -243,7 +243,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       moveFile: async (id: string, folderId: string) => {
         try {
-          await fileRepository.moveFile(id, folderId);
+          await fileRepository.instance.moveFile(id, folderId);
           // Refresh files to reflect the move
           await get().fetchFiles();
         } catch (error) {
@@ -253,7 +253,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       moveFiles: async (ids: string[], folderId: string) => {
         try {
-          await Promise.all(ids.map(id => fileRepository.moveFile(id, folderId)));
+          await Promise.all(ids.map(id => fileRepository.instance.moveFile(id, folderId)));
           // Refresh files to reflect the moves
           await get().fetchFiles();
         } catch (error) {
@@ -269,7 +269,7 @@ export const useUploadsStore = create<UploadsStore>()(
         });
         
         try {
-          const response = await folderRepository.findAll();
+          const response = await folderRepository.instance.findAll();
           set(state => {
             state.folders = response.data;
             state.foldersLoading = false;
@@ -284,7 +284,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       fetchFolder: async (id: string) => {
         try {
-          const folder = await folderRepository.findById(id);
+          const folder = await folderRepository.instance.findById(id);
           set(state => {
             state.currentFolder = folder;
           });
@@ -297,7 +297,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       createFolder: async (data: CreateFolderDTO) => {
         try {
-          const newFolder = await folderRepository.createFolder(data);
+          const newFolder = await folderRepository.instance.createFolder(data);
           set(state => {
             state.folders.push(newFolder);
           });
@@ -309,7 +309,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       updateFolder: async (id: string, updates: UpdateFolderDTO) => {
         try {
-          const updatedFolder = await folderRepository.update(id, updates);
+          const updatedFolder = await folderRepository.instance.update(id, updates);
           set(state => {
             const index = state.folders.findIndex(f => f.id === id);
             if (index !== -1) {
@@ -326,7 +326,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       deleteFolder: async (id: string) => {
         try {
-          await folderRepository.deleteFolder(id);
+          await folderRepository.instance.deleteFolder(id);
           set(state => {
             state.folders = state.folders.filter(f => f.id !== id);
             if (state.currentFolder?.id === id) {
@@ -340,7 +340,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       getRootFolders: async () => {
         try {
-          const folders = await folderRepository.getRootFolders();
+          const folders = await folderRepository.instance.getRootFolders();
           set(state => {
             state.folders = folders;
           });
@@ -351,7 +351,7 @@ export const useUploadsStore = create<UploadsStore>()(
       
       getFolderChildren: async (parentId: string) => {
         try {
-          return await folderRepository.getFolderChildren(parentId);
+          return await folderRepository.instance.getFolderChildren(parentId);
         } catch (error) {
           console.error('Failed to get folder children:', error);
           return [];

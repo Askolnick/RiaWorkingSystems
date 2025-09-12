@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Input, Button } from '@ria/web-ui';
-import { auth } from '@ria/client';
+import { signIn } from 'next-auth/react';
 import { ROUTES } from '@ria/utils';
+import { authRepository } from '@ria/client';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Enhanced sign-up page using shared Input and Button components.
 // The auth client persists sessions for demonstration.
@@ -14,27 +16,63 @@ export default function SignUpPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    auth.getSession().then((session) => {
-      if (session) {
-        router.push(ROUTES.PORTAL as any);
-      }
-    });
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      await auth.signUp(email, password, name);
-      router.push(ROUTES.PORTAL as any);
-    } catch (err) {
-      setError('Unable to create account. Please try again.');
+      // Call the registration API using the repository pattern
+      const result = await authRepository.register({
+        email,
+        password,
+        name,
+      });
+
+      // After successful registration, automatically sign in the user
+      console.log('Registration successful, attempting to sign in...');
+      const signInResult = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      console.log('Sign in result:', signInResult);
+
+      if (signInResult?.error) {
+        throw new Error('Account created but could not sign in automatically. Please sign in manually.');
+      }
+
+      if (signInResult?.ok) {
+        // Redirect to portal after successful sign in
+        router.push(ROUTES.PORTAL as any);
+      } else {
+        // If sign-in didn't error but also wasn't ok, redirect to sign-in page
+        router.push(ROUTES.SIGN_IN as any);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Unable to create account. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -97,18 +135,59 @@ export default function SignUpPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Create a password"
-                  className="w-full"
+                  placeholder="Create a password (min 6 characters)"
+                  className="w-full pr-10"
                   disabled={isLoading}
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                Confirm Password
+              </label>
+              <div className="mt-1 relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                  className="w-full pr-10"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
               </div>
             </div>
           </div>

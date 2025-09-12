@@ -93,7 +93,7 @@ export const useLearningStore = create<LearningStore>()(
         });
         
         try {
-          const response = await courseRepository.findAll();
+          const response = await courseRepository.instance.findAll();
           set(state => {
             state.courses = response.data;
             state.coursesLoading = false;
@@ -113,7 +113,7 @@ export const useLearningStore = create<LearningStore>()(
         });
         
         try {
-          const course = await courseRepository.findById(id);
+          const course = await courseRepository.instance.findById(id);
           set(state => {
             state.currentCourse = course;
             state.coursesLoading = false;
@@ -132,7 +132,7 @@ export const useLearningStore = create<LearningStore>()(
         });
         
         try {
-          const courses = await courseRepository.getEnrolledCourses();
+          const courses = await courseRepository.instance.getEnrolledCourses();
           set(state => {
             state.enrolledCourses = courses;
             state.coursesLoading = false;
@@ -147,7 +147,7 @@ export const useLearningStore = create<LearningStore>()(
       
       fetchRecommendedCourses: async () => {
         try {
-          const courses = await courseRepository.getRecommendedCourses();
+          const courses = await courseRepository.instance.getRecommendedCourses();
           set(state => {
             state.recommendedCourses = courses;
           });
@@ -158,7 +158,7 @@ export const useLearningStore = create<LearningStore>()(
       
       enrollInCourse: async (courseId: string) => {
         try {
-          await courseRepository.enrollInCourse({ courseId, userId: 'current-user' });
+          await courseRepository.instance.enrollInCourse({ courseId, userId: 'current-user' });
           
           // Update local state
           set(state => {
@@ -177,7 +177,7 @@ export const useLearningStore = create<LearningStore>()(
       
       createCourse: async (course: CreateCourseDTO) => {
         try {
-          const newCourse = await courseRepository.create(course);
+          const newCourse = await courseRepository.instance.create(course);
           set(state => {
             state.courses.push(newCourse);
           });
@@ -189,7 +189,7 @@ export const useLearningStore = create<LearningStore>()(
       
       updateCourse: async (id: string, updates: UpdateCourseDTO) => {
         try {
-          const updatedCourse = await courseRepository.update(id, updates);
+          const updatedCourse = await courseRepository.instance.update(id, updates);
           set(state => {
             const index = state.courses.findIndex(c => c.id === id);
             if (index !== -1) {
@@ -206,7 +206,7 @@ export const useLearningStore = create<LearningStore>()(
       
       deleteCourse: async (id: string) => {
         try {
-          await courseRepository.delete(id);
+          await courseRepository.instance.delete(id);
           set(state => {
             state.courses = state.courses.filter(c => c.id !== id);
             if (state.currentCourse?.id === id) {
@@ -226,7 +226,7 @@ export const useLearningStore = create<LearningStore>()(
         });
         
         try {
-          const lesson = await lessonRepository.findById(id);
+          const lesson = await lessonRepository.instance.findById(id);
           set(state => {
             state.currentLesson = lesson;
             state.lessonLoading = false;
@@ -241,8 +241,8 @@ export const useLearningStore = create<LearningStore>()(
       
       completeLesson: async (courseId: string, lessonId: string) => {
         try {
-          await lessonRepository.markAsComplete(lessonId);
-          await courseRepository.updateProgress(courseId, {
+          await lessonRepository.instance.markAsComplete(lessonId);
+          await courseRepository.instance.updateProgress(courseId, {
             lessonId,
             completed: true,
             completedAt: new Date().toISOString(),
@@ -281,7 +281,7 @@ export const useLearningStore = create<LearningStore>()(
         if (!get().currentLesson) return;
         
         try {
-          const nextLesson = await lessonRepository.getNextLesson(get().currentLesson!.id);
+          const nextLesson = await lessonRepository.instance.getNextLesson(get().currentLesson!.id);
           if (nextLesson) {
             set(state => {
               state.currentLesson = nextLesson;
@@ -299,7 +299,7 @@ export const useLearningStore = create<LearningStore>()(
         });
         
         try {
-          const certificates = await courseRepository.getCertificates();
+          const certificates = await courseRepository.instance.getCertificates();
           set(state => {
             state.certificates = certificates;
             state.certificatesLoading = false;
@@ -314,7 +314,7 @@ export const useLearningStore = create<LearningStore>()(
       // Progress actions
       updateProgress: async (courseId: string, update: ProgressUpdateDTO) => {
         try {
-          await courseRepository.updateProgress(courseId, update);
+          await courseRepository.instance.updateProgress(courseId, update);
           
           // Update local state
           set(state => {

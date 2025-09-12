@@ -1,5 +1,11 @@
 export type LinkKind = 'relates' | 'depends' | 'blocks' | 'duplicates' | 'references';
 
+export interface EntityRef {
+  type: string;
+  id: string;
+  tenantId?: string;
+}
+
 export interface EntityLink {
   id: string;
   from: { type: string; id: string };
@@ -8,6 +14,11 @@ export interface EntityLink {
   note?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Helper function to create entity references
+export function createEntityRef(type: string, id: string, tenantId?: string): EntityRef {
+  return { type, id, tenantId };
 }
 
 // API surface for links; use this interface for both mock and real implementations.

@@ -279,6 +279,24 @@ export class LessonRepository {
   }
 }
 
-// Export singleton instances
-export const courseRepository = new CourseRepository();
-export const lessonRepository = new LessonRepository();
+// Lazy initialization to prevent bundle bloat
+let _courseRepository: CourseRepository | null = null;
+let _lessonRepository: LessonRepository | null = null;
+
+export const courseRepository = {
+  get instance(): CourseRepository {
+    if (!_courseRepository) {
+      _courseRepository = new CourseRepository();
+    }
+    return _courseRepository;
+  }
+};
+
+export const lessonRepository = {
+  get instance(): LessonRepository {
+    if (!_lessonRepository) {
+      _lessonRepository = new LessonRepository();
+    }
+    return _lessonRepository;
+  }
+};

@@ -2,7 +2,7 @@
   "name": "@ria/db",
   "version": "0.1.0",
   "description": "Database package for RIA Management System",
-  "main": "src/index.ts",
+  "main": "index.ts",
   "scripts": {
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",

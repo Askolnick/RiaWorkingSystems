@@ -312,7 +312,34 @@ export class FinanceStatsRepository {
   }
 }
 
-// Export singleton instances
-export const invoiceRepository = new InvoiceRepository();
-export const transactionRepository = new TransactionRepository();
-export const financeStatsRepository = new FinanceStatsRepository();
+// Lazy initialization to prevent bundle bloat
+let _invoiceRepository: InvoiceRepository | null = null;
+let _transactionRepository: TransactionRepository | null = null;
+let _financeStatsRepository: FinanceStatsRepository | null = null;
+
+export const invoiceRepository = {
+  get instance(): InvoiceRepository {
+    if (!_invoiceRepository) {
+      _invoiceRepository = new InvoiceRepository();
+    }
+    return _invoiceRepository;
+  }
+};
+
+export const transactionRepository = {
+  get instance(): TransactionRepository {
+    if (!_transactionRepository) {
+      _transactionRepository = new TransactionRepository();
+    }
+    return _transactionRepository;
+  }
+};
+
+export const financeStatsRepository = {
+  get instance(): FinanceStatsRepository {
+    if (!_financeStatsRepository) {
+      _financeStatsRepository = new FinanceStatsRepository();
+    }
+    return _financeStatsRepository;
+  }
+};

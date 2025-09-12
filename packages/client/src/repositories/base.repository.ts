@@ -20,7 +20,7 @@ export interface PaginatedResponse<T> {
 
 export interface QueryParams extends PaginationParams {
   search?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, string | number | boolean | string[]>;
 }
 
 export class RepositoryError extends Error {
@@ -28,7 +28,7 @@ export class RepositoryError extends Error {
     message: string,
     public code: string,
     public statusCode?: number,
-    public details?: any
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'RepositoryError';
@@ -198,12 +198,17 @@ export abstract class MockRepository<T extends { id: string }, CreateDTO = Parti
   }
 
   protected getStorage(): T[] {
+    if (typeof window === 'undefined') {
+      return []; // Return empty array on server side
+    }
     const data = localStorage.getItem(this.storageKey);
     return data ? JSON.parse(data) : [];
   }
 
   protected setStorage(data: T[]): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
+    }
   }
 
   async findAll(params?: QueryParams): Promise<PaginatedResponse<T>> {

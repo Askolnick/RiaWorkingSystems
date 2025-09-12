@@ -1,0 +1,1 @@
+'use client';import ThemeToggle from './ThemeToggle';export default function Topbar(){return (<header className='h-14 flex items-center justify-between px-4 border-b border-border bg-bg-1'><div className='text-sm text-text-muted'>Admin-only preview</div><ThemeToggle/></header>)}

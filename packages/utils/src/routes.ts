@@ -13,22 +13,33 @@ export const ROUTES = {
   PORTAL: '/portal',
   
   // Module routes
+  EMAIL: '/email',
+  EMAIL_ACCOUNTS: '/email/accounts',
+  EMAIL_SETTINGS: '/email/settings',
   MESSAGING: '/messaging',
   TASKS: '/tasks',
   LIBRARY: '/library',
   LIBRARY_WIKI: '/library/wiki',
   LIBRARY_LEARNING: '/library/learning',
   LIBRARY_UPLOADS: '/library/uploads',
+  LIBRARY_SECTIONS: '/library/sections',
   INSIGHTS: '/insights',
   FINANCE: '/finance',
   FINANCE_INVOICES: '/finance/invoices',
   FINANCE_BILLS: '/finance/bills',
   FINANCE_EXPENSES: '/finance/expenses',
-  FINANCE_BALANCE_SHEET: '/finance/balance-sheet',
+  FINANCE_REPORTS: '/finance/reports',
+  FINANCE_AGING: '/finance/reports/aging',
+  FINANCE_RECONCILIATION: '/finance/reconciliation',
+  FINANCE_CURRENCY: '/finance/currency',
+  FINANCE_ACCOUNTS_RECEIVABLE: '/finance/accounts-receivable',
   PRODUCT: '/product',
   CAMPAIGNS: '/campaigns',
   ADMIN: '/admin',
   SETTINGS: '/settings',
+  
+  // Templates routes
+  TEMPLATES: '/templates',
 } as const;
 
 // Type for route keys

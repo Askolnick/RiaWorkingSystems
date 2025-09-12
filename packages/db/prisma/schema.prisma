@@ -1,10 +1,3 @@
-// =============================================================
-// Ria Living Systems — Unified Prisma Schema (PostgreSQL)
-// Multi-tenant; clean relations; generic linking/tagging;
-// RBAC, Notifications/Activity; Files; Messaging; Tasks; Library;
-// FTS-ready columns (manual SQL indexes below).
-///////////////////////////////////////////////////////////////
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,7 +7,2867 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// -------------------- Enums --------------------
+model Tenant {
+  id                      String                   @id @default(uuid()) @db.Uuid
+  name                    String
+  slug                    String                   @unique
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  activityEvents          ActivityEvent[]
+  attachments             Attachment[]
+  dashboardLayouts        DashboardLayout[]
+  entityLinks             EntityLink[]
+  fileAssets              FileAsset[]
+  groups                  Group[]
+  memberships             Membership[]
+  membershipGroups        MembershipGroup[]
+  messages                Message[]
+  messageChannels         MessageChannel[]
+  notifications           Notification[]
+  permissionGrants        PermissionGrant[]
+  roadmapComments         RoadmapComment[]
+  roles                   Role[]
+  searchIndexes           SearchIndex[]
+  tags                    Tag[]
+  taggings                Tagging[]
+  tasks                   Task[]
+  taskComments            TaskComment[]
+  taskCustomFields        TaskCustomField[]
+  taskCustomFieldValues   TaskCustomFieldValue[]
+  taskDependencies        TaskDependency[]
+  taskSavedViews          TaskSavedView[]
+  threads                 Thread[]
+  watches                 Watch[]
+  auditLogs               AuditLog[]
+  campaignAnalytics       CampaignAnalytics[]
+  campaignAssets          CampaignAsset[]
+  campaignAudiences       CampaignAudience[]
+  campaignAutomations     CampaignAutomation[]
+  campaignEvents          CampaignEvent[]
+  campaignMessages        CampaignMessage[]
+  campaignTags            CampaignTag[]
+  campaigns               Campaign[]
+  compensationHistory     CompensationHistory[]
+  contactInteractions     ContactInteraction[]
+  contactLists            ContactList[]
+  contacts                Contact[]
+  departments             Department[]
+  docPublishes            DocPublish[]
+  docSectionLinks         DocSectionLink[]
+  employeeBenefits        EmployeeBenefit[]
+  employeeDocuments       EmployeeDocument[]
+  employeeSkills          EmployeeSkill[]
+  employees               Employee[]
+  expenseAttachments      ExpenseAttachment[]
+  expenseCategories       ExpenseCategory[]
+  expenseComments         ExpenseComment[]
+  expenseReportItems      ExpenseReportItem[]
+  expenseReports          ExpenseReport[]
+  expenses                Expense[]
+  feedback                Feedback[]
+  feedbackActivities      FeedbackActivity[]
+  feedbackAttachments     FeedbackAttachment[]
+  feedbackCategories      FeedbackCategory[]
+  feedbackComments        FeedbackComment[]
+  feedbackCustomFields    FeedbackCustomField[]
+  feedbackCustomValues    FeedbackCustomValue[]
+  feedbackFollowers       FeedbackFollower[]
+  feedbackLinks           FeedbackLink[]
+  feedbackSubcategories   FeedbackSubcategory[]
+  feedbackVotes           FeedbackVote[]
+  invoiceActivities       InvoiceActivity[]
+  invoiceItems            InvoiceItem[]
+  invoicePayments         InvoicePayment[]
+  invoiceReminders        InvoiceReminder[]
+  invoices                Invoice[]
+  leaveRequests           LeaveRequest[]
+  libraryDocs             LibraryDoc[]
+  librarySections         LibrarySection[]
+  locations               Location[]
+  messageTemplates        MessageTemplate[]
+  performanceReviews      PerformanceReview[]
+  productAttributeValues  ProductAttributeValue[]
+  productAttributes       ProductAttribute[]
+  productBundles          ProductBundle[]
+  productCategories       ProductCategory[]
+  productImages           ProductImage[]
+  productPrices           ProductPrice[]
+  productReviews          ProductReview[]
+  productRoadmaps         ProductRoadmap[]
+  productVariants         ProductVariant[]
+  products                Product[]
+  roadmapCategories       RoadmapCategory[]
+  roadmapContributors     RoadmapContributor[]
+  roadmapCustomFields     RoadmapCustomField[]
+  roadmapFollowers        RoadmapFollower[]
+  roadmapItemActivities   RoadmapItemActivity[]
+  roadmapItemAttachments  RoadmapItemAttachment[]
+  roadmapItemComments     RoadmapItemComment[]
+  roadmapItemCustomValues RoadmapItemCustomValue[]
+  roadmapItemVotes        RoadmapItemVote[]
+  roadmapItemWatchers     RoadmapItemWatcher[]
+  roadmapItems            RoadmapItem[]
+  roadmapReleaseNotes     RoadmapReleaseNote[]
+  roadmapReleases         RoadmapRelease[]
+  timeEntries             TimeEntry[]
+  wikiBookmarks           WikiBookmark[]
+  wikiLinks               WikiLink[]
+  wikiPages               WikiPage[]
+  wikiRevisions           WikiRevision[]
+  wikiSectionLinks        WikiSectionLink[]
+  wikiSectionUsages       WikiSectionUsage[]
+  wikiSectionVersions     WikiSectionVersion[]
+  wikiSections            WikiSection[]
+  wikiSpaces              WikiSpace[]
+  threadParticipants      ThreadParticipant[]
+}
+
+model User {
+  id                           String                  @id @default(uuid()) @db.Uuid
+  email                        String                  @unique
+  displayName                  String
+  avatarUrl                    String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+  password                     String
+  activities                   ActivityEvent[]         @relation("UserActivities")
+  memberships                  Membership[]
+  notifications                Notification[]          @relation("UserNotifications")
+  createdViews                 TaskSavedView[]
+  watches                      Watch[]
+  auditLogs                    AuditLog[]              @relation("AuditLogUser")
+  uploadedCampaignAssets       CampaignAsset[]         @relation("CampaignAssetUploader")
+  createdCampaignAudiences     CampaignAudience[]      @relation("CampaignAudienceCreator")
+  createdCampaignAutomations   CampaignAutomation[]    @relation("CampaignAutomationCreator")
+  createdCampaignTags          CampaignTag[]           @relation("CampaignTagCreator")
+  createdCampaigns             Campaign[]              @relation("CampaignCreator")
+  approvedCompensationChanges  CompensationHistory[]   @relation("CompensationApprover")
+  contactInteractions          ContactInteraction[]
+  createdContactLists          ContactList[]
+  assignedContacts             Contact[]               @relation("ContactAssignee")
+  createdContacts              Contact[]               @relation("ContactCreator")
+  createdDepartments           Department[]            @relation("DepartmentCreator")
+  enrolledBenefits             EmployeeBenefit[]       @relation("BenefitEnroller")
+  uploadedEmployeeDocuments    EmployeeDocument[]      @relation("EmployeeDocumentUploader")
+  createdEmployees             Employee[]              @relation("EmployeeCreator")
+  employeeAccount              Employee?               @relation("UserEmployee")
+  expenseAttachments           ExpenseAttachment[]     @relation("ExpenseAttachmentUploader")
+  createdExpenseCategories     ExpenseCategory[]       @relation("ExpenseCategoryCreator")
+  expenseComments              ExpenseComment[]        @relation("ExpenseCommentAuthor")
+  approvedExpenseReports       ExpenseReport[]         @relation("ExpenseReportApprover")
+  createdExpenseReports        ExpenseReport[]         @relation("ExpenseReportCreator")
+  submittedExpenseReports      ExpenseReport[]         @relation("ExpenseReportSubmitter")
+  approvedExpenses             Expense[]               @relation("ExpenseApprover")
+  createdExpenses              Expense[]               @relation("ExpenseCreator")
+  submittedExpenses            Expense[]               @relation("ExpenseSubmitter")
+  assignedFeedback             Feedback[]              @relation("FeedbackAssignee")
+  resolvedFeedback             Feedback[]              @relation("FeedbackResolver")
+  submittedFeedback            Feedback[]              @relation("FeedbackSubmitter")
+  userFeedback                 Feedback[]              @relation("FeedbackUser")
+  feedbackActivities           FeedbackActivity[]      @relation("FeedbackActivityCreator")
+  feedbackAttachments          FeedbackAttachment[]    @relation("FeedbackAttachmentUploader")
+  autoAssignedCategories       FeedbackCategory[]      @relation("CategoryAutoAssignee")
+  createdFeedbackCategories    FeedbackCategory[]      @relation("FeedbackCategoryCreator")
+  feedbackComments             FeedbackComment[]       @relation("FeedbackCommentCreator")
+  createdFeedbackCustomFields  FeedbackCustomField[]   @relation("FeedbackCustomFieldCreator")
+  feedbackFollowing            FeedbackFollower[]      @relation("FeedbackFollowerUser")
+  createdFeedbackLinks         FeedbackLink[]          @relation("FeedbackLinkCreator")
+  createdFeedbackSubcategories FeedbackSubcategory[]   @relation("FeedbackSubcategoryCreator")
+  feedbackVotes                FeedbackVote[]          @relation("FeedbackVoter")
+  createdActivities            InvoiceActivity[]       @relation("ActivityCreator")
+  createdPayments              InvoicePayment[]        @relation("PaymentCreator")
+  createdInvoices              Invoice[]               @relation("InvoiceCreator")
+  approvedLeaveRequests        LeaveRequest[]          @relation("LeaveRequestApprover")
+  createdLocations             Location[]              @relation("LocationCreator")
+  createdTemplates             MessageTemplate[]
+  conductedReviews             PerformanceReview[]     @relation("PerformanceReviewer")
+  createdProductAttributes     ProductAttribute[]      @relation("ProductAttributeCreator")
+  createdProductCategories     ProductCategory[]       @relation("ProductCategoryCreator")
+  uploadedProductImages        ProductImage[]          @relation("ProductImageUploader")
+  productReviews               ProductReview[]         @relation("ProductReviewer")
+  createdRoadmaps              ProductRoadmap[]        @relation("RoadmapCreator")
+  createdProducts              Product[]               @relation("ProductCreator")
+  createdRoadmapCategories     RoadmapCategory[]       @relation("RoadmapCategoryCreator")
+  roadmapInvitations           RoadmapContributor[]    @relation("RoadmapInviter")
+  roadmapContributions         RoadmapContributor[]    @relation("RoadmapContributorUser")
+  createdRoadmapCustomFields   RoadmapCustomField[]    @relation("RoadmapCustomFieldCreator")
+  roadmapFollowings            RoadmapFollower[]       @relation("RoadmapFollowerUser")
+  roadmapItemActivities        RoadmapItemActivity[]   @relation("RoadmapActivityCreator")
+  roadmapItemAttachments       RoadmapItemAttachment[] @relation("RoadmapAttachmentUploader")
+  roadmapItemComments          RoadmapItemComment[]    @relation("RoadmapCommentCreator")
+  roadmapItemVotes             RoadmapItemVote[]       @relation("RoadmapVoter")
+  roadmapItemWatchers          RoadmapItemWatcher[]    @relation("RoadmapWatcher")
+  createdRoadmapItems          RoadmapItem[]           @relation("RoadmapItemCreator")
+  createdRoadmapReleaseNotes   RoadmapReleaseNote[]    @relation("RoadmapReleaseNoteCreator")
+  createdRoadmapReleases       RoadmapRelease[]        @relation("RoadmapReleaseCreator")
+  approvedTimeEntries          TimeEntry[]             @relation("TimeEntryApprover")
+  threadParticipations         ThreadParticipant[]
+
+  @@index([email])
+  @@index([email], map: "idx_user_email")
+}
+
+model Membership {
+  id        String            @id @default(uuid()) @db.Uuid
+  tenantId  String            @db.Uuid
+  userId    String            @db.Uuid
+  roleId    String?           @db.Uuid
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  role      Role?             @relation(fields: [roleId], references: [id])
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groups    MembershipGroup[]
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+}
+
+model Group {
+  id        String            @id @default(uuid()) @db.Uuid
+  tenantId  String            @db.Uuid
+  name      String
+  slug      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members   MembershipGroup[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, name])
+}
+
+model MembershipGroup {
+  id           String     @id @default(uuid()) @db.Uuid
+  tenantId     String     @db.Uuid
+  membershipId String     @db.Uuid
+  groupId      String     @db.Uuid
+  createdAt    DateTime   @default(now())
+  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, groupId])
+  @@index([tenantId, groupId])
+}
+
+model Role {
+  id          String            @id @default(uuid()) @db.Uuid
+  tenantId    String            @db.Uuid
+  name        RoleName
+  label       String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  memberships Membership[]
+  grants      PermissionGrant[]
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model PermissionGrant {
+  id        String           @id @default(uuid()) @db.Uuid
+  tenantId  String           @db.Uuid
+  roleId    String           @db.Uuid
+  resource  String
+  action    PermissionAction
+  condition Json?
+  createdAt DateTime         @default(now())
+  role      Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resource, action])
+  @@index([tenantId, resource, action])
+}
+
+model Tag {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @db.Uuid
+  label     String
+  color     String?
+  createdAt DateTime  @default(now())
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uses      Tagging[]
+
+  @@unique([tenantId, label])
+  @@index([tenantId])
+}
+
+model Tagging {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tagId      String   @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, tagId, entityType, entityId])
+  @@index([tenantId, entityType, entityId])
+}
+
+model EntityLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  fromType  String
+  fromId    String   @db.Uuid
+  toType    String
+  toId      String   @db.Uuid
+  kind      LinkKind @default(relates)
+  note      String?
+  createdBy String   @db.Uuid
+  createdAt DateTime @default(now())
+  active    Boolean  @default(true)
+  metadata  Json?
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, fromType, fromId, toType, toId, kind])
+  @@index([tenantId, fromType, fromId, active])
+  @@index([tenantId, toType, toId, active])
+  @@index([tenantId, kind, active])
+}
+
+model FileAsset {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @db.Uuid
+  bucket      String
+  objectKey   String
+  mimeType    String
+  sizeBytes   Int
+  sha256      String?
+  uploaderId  String?      @db.Uuid
+  createdAt   DateTime     @default(now())
+  attachments Attachment[]
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, objectKey])
+}
+
+model Attachment {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @db.Uuid
+  fileId     String    @db.Uuid
+  entityType String
+  entityId   String    @db.Uuid
+  createdAt  DateTime  @default(now())
+  file       FileAsset @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entityType, entityId])
+}
+
+model MessageChannel {
+  id        String             @id @default(uuid()) @db.Uuid
+  tenantId  String             @db.Uuid
+  kind      MessageChannelKind
+  name      String
+  address   String?
+  createdAt DateTime           @default(now())
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  threads   Thread[]
+
+  @@unique([tenantId, kind, address])
+  @@index([tenantId, kind])
+}
+
+model Thread {
+  id         String         @id @default(uuid()) @db.Uuid
+  tenantId   String         @db.Uuid
+  channelId  String         @db.Uuid
+  subject    String?
+  status     String         @default("open")
+  priority   String         @default("normal")
+  assigneeId String?        @db.Uuid
+  labels     String[]
+  isDirect   Boolean        @default(false)
+  isGroup    Boolean        @default(false)
+  lastAt     DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+  messages     Message[]
+  participants ThreadParticipant[]
+  channel      MessageChannel      @relation(fields: [channelId], references: [id])
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, lastAt])
+  @@index([tenantId, status])
+  @@index([tenantId, assigneeId])
+  @@index([tenantId], map: "thread_tenant_idx")
+}
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  threadId   String   @db.Uuid
+  authorId   String?  @db.Uuid
+  authorAddr String?
+  bodyText   String
+  bodyMd     String?
+  sentAt     DateTime @default(now())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  thread     Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, threadId, sentAt])
+}
+
+model ThreadParticipant {
+  id        String                @id @default(uuid()) @db.Uuid
+  tenantId  String                @db.Uuid
+  threadId  String                @db.Uuid
+  userId    String                @db.Uuid
+  joinedAt  DateTime              @default(now())
+  lastRead  DateTime?
+  role      ThreadParticipantRole @default(MEMBER)
+  
+  thread    Thread                @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([threadId, userId])
+  @@index([tenantId, userId])
+  @@index([threadId])
+}
+
+enum ThreadParticipantRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Task {
+  id           String                 @id @default(uuid()) @db.Uuid
+  tenantId     String                 @db.Uuid
+  number       Int
+  title        String
+  description  String?
+  status       TaskStatus             @default(todo)
+  priority     TaskPriority           @default(medium)
+  assigneeIds  String[]
+  labels       String[]
+  dueAt        DateTime?
+  createdBy    String?                @db.Uuid
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  deletedAt    DateTime?
+  rank         String?                @db.VarChar(64)
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  comments     TaskComment[]
+  customFields TaskCustomFieldValue[]
+  successors   TaskDependency[]       @relation("TaskPredecessors")
+  predecessors TaskDependency[]       @relation("TaskSuccessors")
+
+  @@unique([tenantId, number])
+  @@index([tenantId, status, priority])
+  @@index([tenantId, status, rank])
+  @@index([tenantId, updatedAt])
+  @@index([tenantId, dueAt])
+}
+
+model TaskComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  taskId    String   @db.Uuid
+  authorId  String?  @db.Uuid
+  bodyMd    String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, taskId, createdAt])
+}
+
+model TaskDependency {
+  id            String             @id @default(uuid()) @db.Uuid
+  tenantId      String             @db.Uuid
+  predecessorId String             @db.Uuid
+  successorId   String             @db.Uuid
+  type          TaskDependencyType @default(FS)
+  lagMinutes    Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  predecessor   Task               @relation("TaskPredecessors", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor     Task               @relation("TaskSuccessors", fields: [successorId], references: [id], onDelete: Cascade)
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([predecessorId, successorId])
+  @@index([tenantId, predecessorId])
+  @@index([tenantId, successorId])
+}
+
+model TaskCustomField {
+  id           String                 @id @default(uuid()) @db.Uuid
+  tenantId     String                 @db.Uuid
+  name         String
+  key          String
+  description  String?
+  type         CustomFieldType
+  required     Boolean                @default(false)
+  defaultValue String?
+  options      String?
+  validation   String?
+  isActive     Boolean                @default(true)
+  sortOrder    Int                    @default(0)
+  createdBy    String?                @db.Uuid
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values       TaskCustomFieldValue[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId, isActive, sortOrder])
+}
+
+model TaskCustomFieldValue {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @db.Uuid
+  taskId        String          @db.Uuid
+  customFieldId String          @db.Uuid
+  value         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  customField   TaskCustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+  task          Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, customFieldId])
+  @@index([tenantId, taskId])
+  @@index([tenantId, customFieldId])
+}
+
+model TaskSavedView {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String
+  description String?
+  viewType    String
+  filters     String
+  sorting     String
+  groupBy     String?
+  columns     String?
+  isDefault   Boolean  @default(false)
+  isShared    Boolean  @default(false)
+  createdBy   String   @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, createdBy])
+  @@index([tenantId, isDefault])
+  @@index([tenantId, isShared])
+}
+
+model RoadmapComment {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String      @db.Uuid
+  roadmapItemId String      @db.Uuid
+  authorId      String?     @db.Uuid
+  body          String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  roadmapItem   RoadmapItem @relation("RoadmapComments", fields: [roadmapItemId], references: [id], onDelete: Cascade)
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, roadmapItemId, createdAt])
+}
+
+model LibraryDoc {
+  id         String           @id @default(uuid()) @db.Uuid
+  tenantId   String           @db.Uuid
+  title      String
+  slug       String?
+  kind       DocKind          @default(wiki)
+  status     DocStatus        @default(draft)
+  ownerId    String?          @db.Uuid
+  tags       String[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  deletedAt  DateTime?
+  bodyMd     String?
+  bodyTypist Json?
+  publishes  DocPublish[]
+  sections   DocSectionLink[]
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, kind])
+  @@index([tenantId, updatedAt])
+  @@map("library_docs")
+}
+
+model LibrarySection {
+  id         String           @id @default(uuid()) @db.Uuid
+  tenantId   String           @db.Uuid
+  name       String
+  bodyMd     String?
+  bodyTypist Json?
+  version    Int              @default(1)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  usedBy     DocSectionLink[]
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name, version])
+  @@index([tenantId, name])
+  @@map("library_sections")
+}
+
+model DocSectionLink {
+  id        String         @id @default(uuid()) @db.Uuid
+  tenantId  String         @db.Uuid
+  docId     String         @db.Uuid
+  sectionId String         @db.Uuid
+  position  Int            @default(0)
+  params    Json?
+  createdAt DateTime       @default(now())
+  doc       LibraryDoc     @relation(fields: [docId], references: [id], onDelete: Cascade)
+  section   LibrarySection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, docId, position])
+  @@map("doc_section_links")
+}
+
+model DocPublish {
+  id        String       @id @default(uuid()) @db.Uuid
+  tenantId  String       @db.Uuid
+  docId     String       @db.Uuid
+  scope     PublishScope
+  userIds   String[]
+  groupIds  String[]
+  urlPath   String?
+  createdAt DateTime     @default(now())
+  doc       LibraryDoc   @relation(fields: [docId], references: [id], onDelete: Cascade)
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, scope])
+  @@map("doc_publishes")
+}
+
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @db.Uuid
+  userId     String    @db.Uuid
+  entityType String
+  entityId   String    @db.Uuid
+  kind       String
+  payload    Json?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, entityType, entityId])
+}
+
+model Watch {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  userId     String   @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, entityType, entityId])
+  @@index([tenantId, entityType, entityId])
+}
+
+model ActivityEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  actorId    String?  @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  action     String
+  meta       Json?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation("UserActivities", fields: [actorId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, entityType, entityId, createdAt])
+}
+
+model SearchIndex {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  entityType String
+  entityId   String   @db.Uuid
+  title      String?
+  snippet    String?
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, entityType, entityId])
+  @@index([tenantId, updatedAt])
+}
+
+model DashboardLayout {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  userId    String?  @db.Uuid
+  name      String   @default("default")
+  widgets   Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, name])
+  @@index([tenantId, userId])
+}
+
+model MessageTemplate {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  name         String
+  subject      String
+  content      String
+  templateType String
+  variables    String
+  category     String?
+  tags         String
+  isActive     Boolean  @default(true)
+  createdBy    String   @db.Uuid
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  creator      User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([templateType])
+  @@index([category])
+  @@index([isActive])
+  @@map("message_templates")
+}
+
+model Contact {
+  id               String                  @id @default(uuid()) @db.Uuid
+  tenantId         String                  @db.Uuid
+  firstName        String
+  lastName         String
+  email            String?
+  phone            String?
+  company          String?
+  jobTitle         String?
+  contactType      String                  @default("lead")
+  status           String                  @default("active")
+  source           String?
+  tags             String
+  addresses        String                  @default("[]")
+  socialProfiles   String                  @default("[]")
+  customFields     String                  @default("{}")
+  notes            String?
+  assignedTo       String?                 @db.Uuid
+  lastContactDate  DateTime?
+  nextFollowUpDate DateTime?
+  leadScore        Int?
+  createdBy        String                  @db.Uuid
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  interactions     ContactInteraction[]
+  listMemberships  ContactListMembership[]
+  assignee         User?                   @relation("ContactAssignee", fields: [assignedTo], references: [id])
+  creator          User                    @relation("ContactCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant           Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([contactType])
+  @@index([status])
+  @@index([assignedTo])
+  @@index([company])
+  @@index([email])
+  @@index([phone])
+  @@index([createdAt])
+  @@index([lastContactDate])
+  @@index([nextFollowUpDate])
+  @@map("contacts")
+}
+
+model ContactInteraction {
+  id            String    @id @default(uuid()) @db.Uuid
+  contactId     String    @db.Uuid
+  tenantId      String    @db.Uuid
+  type          String
+  subject       String
+  description   String?
+  outcome       String?
+  nextAction    String?
+  scheduledDate DateTime?
+  completedDate DateTime?
+  createdBy     String    @db.Uuid
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  contact       Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  creator       User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+  @@index([tenantId])
+  @@index([type])
+  @@index([scheduledDate])
+  @@index([completedDate])
+  @@index([createdAt])
+  @@map("contact_interactions")
+}
+
+model ContactList {
+  id           String                  @id @default(uuid()) @db.Uuid
+  tenantId     String                  @db.Uuid
+  name         String
+  description  String?
+  isStatic     Boolean                 @default(true)
+  criteria     String?
+  contactCount Int                     @default(0)
+  createdBy    String                  @db.Uuid
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  memberships  ContactListMembership[]
+  creator      User                    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([isStatic])
+  @@index([createdBy])
+  @@map("contact_lists")
+}
+
+model ContactListMembership {
+  id            String      @id @default(uuid()) @db.Uuid
+  contactListId String      @db.Uuid
+  contactId     String      @db.Uuid
+  addedAt       DateTime    @default(now())
+  contact       Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactList   ContactList @relation(fields: [contactListId], references: [id], onDelete: Cascade)
+
+  @@unique([contactListId, contactId])
+  @@index([contactListId])
+  @@index([contactId])
+  @@map("contact_list_memberships")
+}
+
+model WikiSpace {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String        @db.Uuid
+  name        String
+  description String?
+  slug        String
+  isPublic    Boolean       @default(false)
+  icon        String?
+  color       String?
+  sortOrder   Int           @default(0)
+  createdBy   String        @db.Uuid
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  pages       WikiPage[]
+  sections    WikiSection[]
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, isPublic])
+  @@index([createdBy])
+  @@map("wiki_spaces")
+}
+
+model WikiPage {
+  id            String             @id @default(uuid()) @db.Uuid
+  tenantId      String             @db.Uuid
+  spaceId       String             @db.Uuid
+  parentId      String?            @db.Uuid
+  title         String
+  slug          String
+  content       String?
+  excerpt       String?
+  status        WikiPageStatus     @default(draft)
+  isTemplate    Boolean            @default(false)
+  templateId    String?            @db.Uuid
+  tags          String[]
+  version       Int                @default(1)
+  publishedAt   DateTime?
+  createdBy     String             @db.Uuid
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  bookmarks     WikiBookmark[]
+  links         WikiLink[]         @relation("WikiPageLinks")
+  backlinks     WikiLink[]         @relation("WikiPageBacklinks")
+  parent        WikiPage?          @relation("WikiPageHierarchy", fields: [parentId], references: [id])
+  children      WikiPage[]         @relation("WikiPageHierarchy")
+  space         WikiSpace          @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  template      WikiPage?          @relation("WikiPageTemplate", fields: [templateId], references: [id])
+  instances     WikiPage[]         @relation("WikiPageTemplate")
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  revisions     WikiRevision[]
+  sectionUsages WikiSectionUsage[]
+
+  @@unique([tenantId, spaceId, slug])
+  @@index([tenantId, spaceId, status])
+  @@index([parentId])
+  @@index([createdBy])
+  @@index([publishedAt])
+  @@map("wiki_pages")
+}
+
+model WikiRevision {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  pageId     String   @db.Uuid
+  version    Int
+  title      String
+  content    String
+  excerpt    String?
+  changeNote String?
+  createdBy  String   @db.Uuid
+  createdAt  DateTime @default(now())
+  page       WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, version])
+  @@index([tenantId, pageId])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("wiki_revisions")
+}
+
+model WikiLink {
+  id         String       @id @default(uuid()) @db.Uuid
+  tenantId   String       @db.Uuid
+  fromPageId String       @db.Uuid
+  toPageId   String       @db.Uuid
+  linkText   String?
+  linkType   WikiLinkType @default(internal)
+  createdAt  DateTime     @default(now())
+  fromPage   WikiPage     @relation("WikiPageLinks", fields: [fromPageId], references: [id], onDelete: Cascade)
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  toPage     WikiPage     @relation("WikiPageBacklinks", fields: [toPageId], references: [id], onDelete: Cascade)
+
+  @@unique([fromPageId, toPageId])
+  @@index([tenantId, fromPageId])
+  @@index([tenantId, toPageId])
+  @@map("wiki_links")
+}
+
+model WikiBookmark {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  userId    String   @db.Uuid
+  pageId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  page      WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pageId])
+  @@index([tenantId, userId])
+  @@map("wiki_bookmarks")
+}
+
+model WikiSection {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @db.Uuid
+  spaceId     String?              @db.Uuid
+  title       String
+  slug        String
+  description String?
+  content     Json
+  type        SectionType          @default(text)
+  status      SectionStatus        @default(draft)
+  isTemplate  Boolean              @default(false)
+  templateId  String?              @db.Uuid
+  tags        String[]
+  version     Int                  @default(1)
+  isPublic    Boolean              @default(false)
+  isGlobal    Boolean              @default(false)
+  createdBy   String               @db.Uuid
+  createdAt   DateTime             @default(now())
+  updatedBy   String?              @db.Uuid
+  updatedAt   DateTime             @updatedAt
+  publishedAt DateTime?
+  links       WikiSectionLink[]    @relation("SectionLinks")
+  backlinks   WikiSectionLink[]    @relation("SectionBacklinks")
+  usages      WikiSectionUsage[]
+  versions    WikiSectionVersion[]
+  space       WikiSpace?           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  template    WikiSection?         @relation("SectionTemplate", fields: [templateId], references: [id])
+  instances   WikiSection[]        @relation("SectionTemplate")
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, spaceId, type, status])
+  @@index([createdBy])
+  @@index([isPublic, isGlobal])
+  @@index([publishedAt])
+  @@map("wiki_sections")
+}
+
+model WikiSectionUsage {
+  id         String      @id @default(uuid()) @db.Uuid
+  tenantId   String      @db.Uuid
+  sectionId  String      @db.Uuid
+  pageId     String      @db.Uuid
+  position   Int
+  customData Json?
+  addedBy    String      @db.Uuid
+  addedAt    DateTime    @default(now())
+  page       WikiPage    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  section    WikiSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, pageId])
+  @@index([tenantId, pageId])
+  @@index([sectionId])
+  @@index([addedBy])
+  @@map("wiki_section_usages")
+}
+
+model WikiSectionVersion {
+  id        String      @id @default(uuid()) @db.Uuid
+  tenantId  String      @db.Uuid
+  sectionId String      @db.Uuid
+  version   Int
+  title     String
+  content   Json
+  type      SectionType
+  changeLog String?
+  createdBy String      @db.Uuid
+  createdAt DateTime    @default(now())
+  section   WikiSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, version])
+  @@index([tenantId, sectionId])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("wiki_section_versions")
+}
+
+model WikiSectionLink {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String      @db.Uuid
+  fromSectionId String      @db.Uuid
+  toSectionId   String      @db.Uuid
+  linkType      String
+  description   String?
+  createdBy     String      @db.Uuid
+  createdAt     DateTime    @default(now())
+  fromSection   WikiSection @relation("SectionLinks", fields: [fromSectionId], references: [id], onDelete: Cascade)
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  toSection     WikiSection @relation("SectionBacklinks", fields: [toSectionId], references: [id], onDelete: Cascade)
+
+  @@unique([fromSectionId, toSectionId, linkType])
+  @@index([tenantId])
+  @@index([fromSectionId])
+  @@index([toSectionId])
+  @@map("wiki_section_links")
+}
+
+model Invoice {
+  id               String            @id @default(uuid()) @db.Uuid
+  tenantId         String            @db.Uuid
+  number           String
+  clientId         String?           @db.Uuid
+  clientName       String
+  clientEmail      String?
+  clientAddress    Json?
+  issueDate        DateTime          @default(now())
+  dueDate          DateTime
+  status           InvoiceStatus     @default(draft)
+  subtotal         Decimal           @db.Decimal(10, 2)
+  taxRate          Decimal           @default(0) @db.Decimal(5, 2)
+  taxAmount        Decimal           @default(0) @db.Decimal(10, 2)
+  discountAmount   Decimal           @default(0) @db.Decimal(10, 2)
+  total            Decimal           @db.Decimal(10, 2)
+  paidAmount       Decimal           @default(0) @db.Decimal(10, 2)
+  balanceDue       Decimal           @db.Decimal(10, 2)
+  currency         String            @default("USD") @db.VarChar(3)
+  description      String?
+  notes            String?
+  terms            String?
+  footer           String?
+  sendReminders    Boolean           @default(true)
+  allowPartialPay  Boolean           @default(true)
+  requireSignature Boolean           @default(false)
+  createdBy        String            @db.Uuid
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  sentAt           DateTime?
+  viewedAt         DateTime?
+  paidAt           DateTime?
+  activities       InvoiceActivity[]
+  items            InvoiceItem[]
+  payments         InvoicePayment[]
+  reminders        InvoiceReminder[]
+  creator          User              @relation("InvoiceCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, number])
+  @@index([tenantId, status])
+  @@index([tenantId, dueDate])
+  @@index([tenantId, clientId])
+  @@index([tenantId, createdAt])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  tenantId    String  @db.Uuid
+  invoiceId   String  @db.Uuid
+  name        String
+  description String?
+  quantity    Decimal @default(1) @db.Decimal(10, 2)
+  rate        Decimal @db.Decimal(10, 2)
+  amount      Decimal @db.Decimal(10, 2)
+  category    String?
+  sortOrder   Int     @default(0)
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, invoiceId])
+  @@map("invoice_items")
+}
+
+model InvoicePayment {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String        @db.Uuid
+  invoiceId   String        @db.Uuid
+  amount      Decimal       @db.Decimal(10, 2)
+  method      PaymentMethod
+  status      PaymentStatus @default(pending)
+  reference   String?
+  notes       String?
+  paymentDate DateTime      @default(now())
+  processedAt DateTime?
+  createdBy   String        @db.Uuid
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  creator     User          @relation("PaymentCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, status])
+  @@index([tenantId, paymentDate])
+  @@map("invoice_payments")
+}
+
+model InvoiceActivity {
+  id          String              @id @default(uuid()) @db.Uuid
+  tenantId    String              @db.Uuid
+  invoiceId   String              @db.Uuid
+  type        InvoiceActivityType
+  description String
+  metadata    Json?
+  createdBy   String?             @db.Uuid
+  createdAt   DateTime            @default(now())
+  creator     User?               @relation("ActivityCreator", fields: [createdBy], references: [id])
+  invoice     Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, invoiceId, createdAt])
+  @@map("invoice_activities")
+}
+
+model InvoiceReminder {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @db.Uuid
+  invoiceId   String       @db.Uuid
+  type        ReminderType
+  daysOffset  Int
+  subject     String
+  message     String
+  sent        Boolean      @default(false)
+  sentAt      DateTime?
+  scheduledAt DateTime
+  createdAt   DateTime     @default(now())
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, invoiceId])
+  @@index([tenantId, scheduledAt, sent])
+  @@map("invoice_reminders")
+}
+
+model ExpenseCategory {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @db.Uuid
+  name              String
+  description       String?
+  isActive          Boolean   @default(true)
+  monthlyBudget     Decimal?  @db.Decimal(10, 2)
+  yearlyBudget      Decimal?  @db.Decimal(10, 2)
+  requiresApproval  Boolean   @default(true)
+  approvalThreshold Decimal   @default(0) @db.Decimal(10, 2)
+  defaultApprover   String?   @db.Uuid
+  createdBy         String    @db.Uuid
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  creator           User      @relation("ExpenseCategoryCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  expenses          Expense[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id               String              @id @default(uuid()) @db.Uuid
+  tenantId         String              @db.Uuid
+  number           String
+  title            String
+  description      String?
+  amount           Decimal             @db.Decimal(10, 2)
+  currency         String              @default("USD") @db.VarChar(3)
+  categoryId       String?             @db.Uuid
+  type             ExpenseType
+  status           ExpenseStatus       @default(draft)
+  expenseDate      DateTime
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  paidAt           DateTime?
+  taxAmount        Decimal             @default(0) @db.Decimal(10, 2)
+  reimbursable     Boolean             @default(true)
+  reimbursedAmount Decimal             @default(0) @db.Decimal(10, 2)
+  submittedBy      String?             @db.Uuid
+  approvedBy       String?             @db.Uuid
+  rejectionReason  String?
+  receiptUrl       String?
+  receiptNumber    String?
+  vendor           String?
+  paymentMethod    String?
+  projectId        String?             @db.Uuid
+  clientId         String?             @db.Uuid
+  createdBy        String              @db.Uuid
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  attachments      ExpenseAttachment[]
+  comments         ExpenseComment[]
+  reportItems      ExpenseReportItem[]
+  approver         User?               @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+  category         ExpenseCategory?    @relation(fields: [categoryId], references: [id])
+  creator          User                @relation("ExpenseCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  submitter        User?               @relation("ExpenseSubmitter", fields: [submittedBy], references: [id])
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, number])
+  @@index([tenantId, status])
+  @@index([tenantId, submittedBy])
+  @@index([tenantId, approvedBy])
+  @@index([tenantId, expenseDate])
+  @@index([tenantId, categoryId])
+  @@map("expenses")
+}
+
+model ExpenseAttachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  expenseId    String   @db.Uuid
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  url          String
+  uploadedBy   String   @db.Uuid
+  uploadedAt   DateTime @default(now())
+  expense      Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader     User     @relation("ExpenseAttachmentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, expenseId])
+  @@map("expense_attachments")
+}
+
+model ExpenseComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  expenseId String   @db.Uuid
+  content   String
+  isPrivate Boolean  @default(false)
+  createdBy String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation("ExpenseCommentAuthor", fields: [createdBy], references: [id], onDelete: Cascade)
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, expenseId, createdAt])
+  @@map("expense_comments")
+}
+
+model ExpenseReport {
+  id                 String              @id @default(uuid()) @db.Uuid
+  tenantId           String              @db.Uuid
+  title              String
+  description        String?
+  status             ExpenseStatus       @default(draft)
+  fromDate           DateTime
+  toDate             DateTime
+  totalAmount        Decimal             @db.Decimal(10, 2)
+  reimbursableAmount Decimal             @db.Decimal(10, 2)
+  taxAmount          Decimal             @db.Decimal(10, 2)
+  submittedBy        String?             @db.Uuid
+  submittedAt        DateTime?
+  approvedBy         String?             @db.Uuid
+  approvedAt         DateTime?
+  paidAt             DateTime?
+  createdBy          String              @db.Uuid
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  expenseItems       ExpenseReportItem[]
+  approver           User?               @relation("ExpenseReportApprover", fields: [approvedBy], references: [id])
+  creator            User                @relation("ExpenseReportCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  submitter          User?               @relation("ExpenseReportSubmitter", fields: [submittedBy], references: [id])
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, submittedBy])
+  @@index([tenantId, approvedBy])
+  @@map("expense_reports")
+}
+
+model ExpenseReportItem {
+  id        String        @id @default(uuid()) @db.Uuid
+  tenantId  String        @db.Uuid
+  reportId  String        @db.Uuid
+  expenseId String        @db.Uuid
+  amount    Decimal       @db.Decimal(10, 2)
+  addedAt   DateTime      @default(now())
+  expense   Expense       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  report    ExpenseReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, expenseId])
+  @@index([tenantId, reportId])
+  @@map("expense_report_items")
+}
+
+model ProductCategory {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+  name            String
+  description     String?
+  slug            String
+  parentId        String?           @db.Uuid
+  sortOrder       Int               @default(0)
+  metaTitle       String?
+  metaDescription String?
+  imageUrl        String?
+  isActive        Boolean           @default(true)
+  isVisible       Boolean           @default(true)
+  createdBy       String            @db.Uuid
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  creator         User              @relation("ProductCategoryCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  parent          ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        ProductCategory[] @relation("CategoryHierarchy")
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products        Product[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, parentId])
+  @@index([tenantId, isActive, isVisible])
+  @@map("product_categories")
+}
+
+model Product {
+  id                String                  @id @default(uuid()) @db.Uuid
+  tenantId          String                  @db.Uuid
+  name              String
+  description       String?
+  shortDescription  String?
+  slug              String
+  sku               String?
+  categoryId        String?                 @db.Uuid
+  type              ProductType             @default(physical)
+  status            ProductStatus           @default(draft)
+  basePrice         Decimal                 @db.Decimal(10, 2)
+  salePrice         Decimal?                @db.Decimal(10, 2)
+  currency          String                  @default("USD") @db.VarChar(3)
+  pricingModel      PricingModel            @default(one_time)
+  trackInventory    Boolean                 @default(false)
+  stockQuantity     Int                     @default(0)
+  lowStockThreshold Int                     @default(5)
+  weight            Decimal?                @db.Decimal(8, 2)
+  length            Decimal?                @db.Decimal(8, 2)
+  width             Decimal?                @db.Decimal(8, 2)
+  height            Decimal?                @db.Decimal(8, 2)
+  shippingRequired  Boolean                 @default(true)
+  metaTitle         String?
+  metaDescription   String?
+  tags              String[]
+  features          Json?
+  specifications    Json?
+  isVisible         Boolean                 @default(true)
+  isFeatured        Boolean                 @default(false)
+  salesCount        Int                     @default(0)
+  viewCount         Int                     @default(0)
+  publishedAt       DateTime?
+  discontinuedAt    DateTime?
+  createdBy         String                  @db.Uuid
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  attributeValues   ProductAttributeValue[]
+  bundles           ProductBundle[]         @relation("BundleProducts")
+  bundleItems       ProductBundle[]         @relation("BundleItems")
+  images            ProductImage[]
+  prices            ProductPrice[]
+  reviews           ProductReview[]
+  variants          ProductVariant[]
+  category          ProductCategory?        @relation(fields: [categoryId], references: [id])
+  creator           User                    @relation("ProductCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@unique([tenantId, sku])
+  @@index([tenantId, status, isVisible])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, type])
+  @@index([tenantId, publishedAt])
+  @@map("products")
+}
+
+model ProductVariant {
+  id            String         @id @default(uuid()) @db.Uuid
+  tenantId      String         @db.Uuid
+  productId     String         @db.Uuid
+  name          String
+  sku           String?
+  price         Decimal?       @db.Decimal(10, 2)
+  salePrice     Decimal?       @db.Decimal(10, 2)
+  stockQuantity Int?
+  attributes    Json
+  isActive      Boolean        @default(true)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  images        ProductImage[]
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, productId, sku])
+  @@index([tenantId, productId])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id         String          @id @default(uuid()) @db.Uuid
+  tenantId   String          @db.Uuid
+  productId  String          @db.Uuid
+  variantId  String?         @db.Uuid
+  url        String
+  alt        String?
+  filename   String
+  fileSize   Int
+  mimeType   String
+  width      Int?
+  height     Int?
+  isPrimary  Boolean         @default(false)
+  sortOrder  Int             @default(0)
+  uploadedBy String          @db.Uuid
+  uploadedAt DateTime        @default(now())
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader   User            @relation("ProductImageUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, productId])
+  @@index([tenantId, variantId])
+  @@map("product_images")
+}
+
+model ProductPrice {
+  id           String       @id @default(uuid()) @db.Uuid
+  tenantId     String       @db.Uuid
+  productId    String       @db.Uuid
+  price        Decimal      @db.Decimal(10, 2)
+  currency     String       @db.VarChar(3)
+  pricingModel PricingModel
+  minQuantity  Int?
+  maxQuantity  Int?
+  unitType     String?
+  billingCycle String?
+  trialDays    Int?
+  validFrom    DateTime?
+  validTo      DateTime?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, productId])
+  @@index([tenantId, isActive, validFrom, validTo])
+  @@map("product_prices")
+}
+
+model ProductReview {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  productId       String   @db.Uuid
+  rating          Int
+  title           String?
+  content         String?
+  reviewerName    String?
+  reviewerEmail   String?
+  userId          String?  @db.Uuid
+  isApproved      Boolean  @default(false)
+  isVerified      Boolean  @default(false)
+  isFeatured      Boolean  @default(false)
+  helpfulCount    Int      @default(0)
+  notHelpfulCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviewer        User?    @relation("ProductReviewer", fields: [userId], references: [id])
+
+  @@index([tenantId, productId])
+  @@index([tenantId, isApproved, rating])
+  @@map("product_reviews")
+}
+
+model ProductBundle {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  bundleId        String   @db.Uuid
+  productId       String   @db.Uuid
+  quantity        Int      @default(1)
+  discount        Decimal  @default(0) @db.Decimal(5, 2)
+  isOptional      Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  bundleProduct   Product  @relation("BundleProducts", fields: [bundleId], references: [id], onDelete: Cascade)
+  includedProduct Product  @relation("BundleItems", fields: [productId], references: [id], onDelete: Cascade)
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, productId])
+  @@index([tenantId, bundleId])
+  @@map("product_bundles")
+}
+
+model ProductAttribute {
+  id           String                  @id @default(uuid()) @db.Uuid
+  tenantId     String                  @db.Uuid
+  name         String
+  type         String
+  isRequired   Boolean                 @default(false)
+  isFilterable Boolean                 @default(false)
+  isVariant    Boolean                 @default(false)
+  options      Json?
+  label        String?
+  placeholder  String?
+  helpText     String?
+  sortOrder    Int                     @default(0)
+  isActive     Boolean                 @default(true)
+  createdBy    String                  @db.Uuid
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  values       ProductAttributeValue[]
+  creator      User                    @relation("ProductAttributeCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, type, isActive])
+  @@map("product_attributes")
+}
+
+model ProductAttributeValue {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  productId   String           @db.Uuid
+  attributeId String           @db.Uuid
+  value       String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  attribute   ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  product     Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, attributeId])
+  @@index([tenantId, productId])
+  @@index([tenantId, attributeId])
+  @@map("product_attribute_values")
+}
+
+model ProductRoadmap {
+  id              String               @id @default(uuid()) @db.Uuid
+  tenantId        String               @db.Uuid
+  name            String
+  description     String?
+  status          RoadmapStatus        @default(planning)
+  visibility      RoadmapVisibility    @default(internal)
+  startDate       DateTime?
+  endDate         DateTime?
+  color           String?              @db.VarChar(7)
+  icon            String?
+  allowVoting     Boolean              @default(false)
+  allowComments   Boolean              @default(true)
+  requireApproval Boolean              @default(false)
+  slug            String
+  itemCount       Int                  @default(0)
+  createdBy       String               @db.Uuid
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  creator         User                 @relation("RoadmapCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categories      RoadmapCategory[]
+  contributors    RoadmapContributor[]
+  customFields    RoadmapCustomField[]
+  followers       RoadmapFollower[]
+  items           RoadmapItem[]
+  releases        RoadmapRelease[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, visibility])
+  @@index([tenantId, createdAt])
+  @@map("product_roadmaps")
+}
+
+model RoadmapItem {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  tenantId           String                   @db.Uuid
+  roadmapId          String                   @db.Uuid
+  parentId           String?                  @db.Uuid
+  title              String
+  description        String?
+  type               ItemType                 @default(feature)
+  status             ItemStatus               @default(idea)
+  priority           ItemPriority             @default(medium)
+  startDate          DateTime?
+  targetDate         DateTime?
+  completedAt        DateTime?
+  estimatedEffort    String?
+  actualEffort       String?
+  progressPercentage Int                      @default(0)
+  categoryId         String?                  @db.Uuid
+  releaseId          String?                  @db.Uuid
+  tags               String[]
+  externalUrl        String?
+  githubIssue        String?
+  jiraTicket         String?
+  figmaLink          String?
+  upvotes            Int                      @default(0)
+  downvotes          Int                      @default(0)
+  viewCount          Int                      @default(0)
+  allowVoting        Boolean                  @default(true)
+  allowComments      Boolean                  @default(true)
+  isPublic           Boolean                  @default(true)
+  slug               String
+  sortOrder          Int                      @default(0)
+  createdBy          String                   @db.Uuid
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  roadmapComments    RoadmapComment[]         @relation("RoadmapComments")
+  activities         RoadmapItemActivity[]
+  attachments        RoadmapItemAttachment[]
+  comments           RoadmapItemComment[]
+  customValues       RoadmapItemCustomValue[]
+  votes              RoadmapItemVote[]
+  watchers           RoadmapItemWatcher[]
+  category           RoadmapCategory?         @relation(fields: [categoryId], references: [id])
+  creator            User                     @relation("RoadmapItemCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  parent             RoadmapItem?             @relation("ItemHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children           RoadmapItem[]            @relation("ItemHierarchy")
+  release            RoadmapRelease?          @relation(fields: [releaseId], references: [id])
+  roadmap            ProductRoadmap           @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tenant             Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, roadmapId, slug])
+  @@index([tenantId, roadmapId, status])
+  @@index([tenantId, roadmapId, type])
+  @@index([tenantId, roadmapId, priority])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, releaseId])
+  @@index([tenantId, createdAt])
+  @@map("roadmap_items")
+}
+
+model RoadmapCategory {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @db.Uuid
+  roadmapId   String         @db.Uuid
+  name        String
+  description String?
+  color       String?        @db.VarChar(7)
+  icon        String?
+  sortOrder   Int            @default(0)
+  createdBy   String         @db.Uuid
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  creator     User           @relation("RoadmapCategoryCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  roadmap     ProductRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items       RoadmapItem[]
+
+  @@unique([tenantId, roadmapId, name])
+  @@index([tenantId, roadmapId])
+  @@map("roadmap_categories")
+}
+
+model RoadmapRelease {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @db.Uuid
+  roadmapId   String               @db.Uuid
+  name        String
+  description String?
+  version     String?
+  startDate   DateTime?
+  targetDate  DateTime?
+  releaseDate DateTime?
+  isReleased  Boolean              @default(false)
+  slug        String
+  itemCount   Int                  @default(0)
+  createdBy   String               @db.Uuid
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  items       RoadmapItem[]
+  notes       RoadmapReleaseNote[]
+  creator     User                 @relation("RoadmapReleaseCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  roadmap     ProductRoadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, roadmapId, slug])
+  @@unique([tenantId, roadmapId, version])
+  @@index([tenantId, roadmapId])
+  @@index([tenantId, isReleased])
+  @@map("roadmap_releases")
+}
+
+model RoadmapReleaseNote {
+  id        String         @id @default(uuid()) @db.Uuid
+  tenantId  String         @db.Uuid
+  releaseId String         @db.Uuid
+  title     String
+  content   String
+  type      String         @default("feature")
+  sortOrder Int            @default(0)
+  createdBy String         @db.Uuid
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  creator   User           @relation("RoadmapReleaseNoteCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  release   RoadmapRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, releaseId])
+  @@map("roadmap_release_notes")
+}
+
+model RoadmapItemComment {
+  id        String               @id @default(uuid()) @db.Uuid
+  tenantId  String               @db.Uuid
+  itemId    String               @db.Uuid
+  parentId  String?              @db.Uuid
+  content   String
+  isPrivate Boolean              @default(false)
+  createdBy String               @db.Uuid
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  creator   User                 @relation("RoadmapCommentCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  item      RoadmapItem          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  parent    RoadmapItemComment?  @relation("CommentHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  RoadmapItemComment[] @relation("CommentHierarchy")
+  tenant    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, itemId])
+  @@index([tenantId, createdAt])
+  @@map("roadmap_item_comments")
+}
+
+model RoadmapItemVote {
+  id        String      @id @default(uuid()) @db.Uuid
+  tenantId  String      @db.Uuid
+  itemId    String      @db.Uuid
+  userId    String      @db.Uuid
+  isUpvote  Boolean
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  item      RoadmapItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User        @relation("RoadmapVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([tenantId, itemId])
+  @@map("roadmap_item_votes")
+}
+
+model RoadmapItemWatcher {
+  id                   String      @id @default(uuid()) @db.Uuid
+  tenantId             String      @db.Uuid
+  itemId               String      @db.Uuid
+  userId               String      @db.Uuid
+  notifyOnStatusChange Boolean     @default(true)
+  notifyOnComments     Boolean     @default(true)
+  notifyOnProgress     Boolean     @default(false)
+  createdAt            DateTime    @default(now())
+  item                 RoadmapItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tenant               Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                 User        @relation("RoadmapWatcher", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([tenantId, itemId])
+  @@map("roadmap_item_watchers")
+}
+
+model RoadmapItemActivity {
+  id        String              @id @default(uuid()) @db.Uuid
+  tenantId  String              @db.Uuid
+  itemId    String              @db.Uuid
+  type      RoadmapActivityType
+  title     String
+  details   String?
+  oldValue  Json?
+  newValue  Json?
+  createdBy String              @db.Uuid
+  createdAt DateTime            @default(now())
+  creator   User                @relation("RoadmapActivityCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  item      RoadmapItem         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tenant    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, itemId])
+  @@index([tenantId, createdAt])
+  @@map("roadmap_item_activities")
+}
+
+model RoadmapItemAttachment {
+  id           String      @id @default(uuid()) @db.Uuid
+  tenantId     String      @db.Uuid
+  itemId       String      @db.Uuid
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  url          String
+  uploadedBy   String      @db.Uuid
+  uploadedAt   DateTime    @default(now())
+  item         RoadmapItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader     User        @relation("RoadmapAttachmentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, itemId])
+  @@map("roadmap_item_attachments")
+}
+
+model RoadmapContributor {
+  id         String         @id @default(uuid()) @db.Uuid
+  tenantId   String         @db.Uuid
+  roadmapId  String         @db.Uuid
+  userId     String         @db.Uuid
+  role       String         @default("contributor")
+  canEdit    Boolean        @default(false)
+  canDelete  Boolean        @default(false)
+  canApprove Boolean        @default(false)
+  canInvite  Boolean        @default(false)
+  addedBy    String         @db.Uuid
+  addedAt    DateTime       @default(now())
+  inviter    User           @relation("RoadmapInviter", fields: [addedBy], references: [id], onDelete: Cascade)
+  roadmap    ProductRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User           @relation("RoadmapContributorUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+  @@index([tenantId, roadmapId])
+  @@map("roadmap_contributors")
+}
+
+model RoadmapFollower {
+  id                 String         @id @default(uuid()) @db.Uuid
+  tenantId           String         @db.Uuid
+  roadmapId          String         @db.Uuid
+  userId             String         @db.Uuid
+  notifyOnNewItem    Boolean        @default(true)
+  notifyOnRelease    Boolean        @default(true)
+  notifyOnMilestone  Boolean        @default(false)
+  emailNotifications Boolean        @default(false)
+  followedAt         DateTime       @default(now())
+  roadmap            ProductRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tenant             Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user               User           @relation("RoadmapFollowerUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+  @@index([tenantId, roadmapId])
+  @@map("roadmap_followers")
+}
+
+model RoadmapCustomField {
+  id          String                   @id @default(uuid()) @db.Uuid
+  tenantId    String                   @db.Uuid
+  roadmapId   String                   @db.Uuid
+  name        String
+  type        String
+  isRequired  Boolean                  @default(false)
+  options     Json?
+  label       String?
+  placeholder String?
+  helpText    String?
+  sortOrder   Int                      @default(0)
+  isActive    Boolean                  @default(true)
+  createdBy   String                   @db.Uuid
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  creator     User                     @relation("RoadmapCustomFieldCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  roadmap     ProductRoadmap           @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values      RoadmapItemCustomValue[]
+
+  @@unique([tenantId, roadmapId, name])
+  @@index([tenantId, roadmapId])
+  @@map("roadmap_custom_fields")
+}
+
+model RoadmapItemCustomValue {
+  id        String             @id @default(uuid()) @db.Uuid
+  tenantId  String             @db.Uuid
+  itemId    String             @db.Uuid
+  fieldId   String             @db.Uuid
+  value     String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  field     RoadmapCustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  item      RoadmapItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, fieldId])
+  @@index([tenantId, itemId])
+  @@map("roadmap_item_custom_values")
+}
+
+model Campaign {
+  id                String               @id @default(uuid()) @db.Uuid
+  tenantId          String               @db.Uuid
+  name              String
+  description       String?
+  type              CampaignType
+  status            CampaignStatus       @default(draft)
+  objective         CampaignObjective
+  startDate         DateTime?
+  endDate           DateTime?
+  timezone          String               @default("UTC")
+  audienceType      AudienceType         @default(all_contacts)
+  audienceConfig    Json?
+  targetCount       Int                  @default(0)
+  subject           String?
+  content           Json
+  template          Json?
+  priority          Int                  @default(1)
+  frequency         String?
+  trackOpens        Boolean              @default(true)
+  trackClicks       Boolean              @default(true)
+  trackConversions  Boolean              @default(false)
+  conversionGoal    String?
+  budget            Decimal?             @db.Decimal(10, 2)
+  costPerSend       Decimal?             @db.Decimal(6, 4)
+  actualCost        Decimal              @default(0) @db.Decimal(10, 2)
+  sentCount         Int                  @default(0)
+  deliveredCount    Int                  @default(0)
+  openedCount       Int                  @default(0)
+  clickedCount      Int                  @default(0)
+  bouncedCount      Int                  @default(0)
+  unsubscribedCount Int                  @default(0)
+  conversionCount   Int                  @default(0)
+  deliveryRate      Decimal              @default(0) @db.Decimal(5, 2)
+  openRate          Decimal              @default(0) @db.Decimal(5, 2)
+  clickRate         Decimal              @default(0) @db.Decimal(5, 2)
+  bounceRate        Decimal              @default(0) @db.Decimal(5, 2)
+  unsubscribeRate   Decimal              @default(0) @db.Decimal(5, 2)
+  conversionRate    Decimal              @default(0) @db.Decimal(5, 2)
+  roi               Decimal              @default(0) @db.Decimal(8, 2)
+  isAbTest          Boolean              @default(false)
+  parentCampaignId  String?              @db.Uuid
+  testPercentage    Int?
+  winnerCriteria    String?
+  winnerSelected    Boolean              @default(false)
+  createdBy         String               @db.Uuid
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  sentAt            DateTime?
+  completedAt       DateTime?
+  analytics         CampaignAnalytics[]
+  assets            CampaignAsset[]
+  audiences         CampaignAudience[]
+  automations       CampaignAutomation[]
+  events            CampaignEvent[]
+  messages          CampaignMessage[]
+  tags              CampaignTag[]
+  creator           User                 @relation("CampaignCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  parentCampaign    Campaign?            @relation("CampaignABTest", fields: [parentCampaignId], references: [id], onDelete: Cascade)
+  childCampaigns    Campaign[]           @relation("CampaignABTest")
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@index([tenantId, startDate])
+  @@index([tenantId, createdAt])
+  @@map("campaigns")
+}
+
+model CampaignMessage {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @db.Uuid
+  campaignId     String        @db.Uuid
+  contactId      String        @db.Uuid
+  status         MessageStatus @default(draft)
+  content        Json
+  metadata       Json?
+  channel        String
+  providerName   String?
+  providerId     String?
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  firstClickAt   DateTime?
+  bouncedAt      DateTime?
+  unsubscribedAt DateTime?
+  errorCode      String?
+  errorMessage   String?
+  retryCount     Int           @default(0)
+  opens          Int           @default(0)
+  clicks         Int           @default(0)
+  clickedUrls    Json?
+  userAgent      String?
+  ipAddress      String?
+  location       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  campaign       Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, contactId])
+  @@index([tenantId, campaignId, status])
+  @@index([tenantId, contactId])
+  @@index([tenantId, sentAt])
+  @@map("campaign_messages")
+}
+
+model CampaignAudience {
+  id           String       @id @default(uuid()) @db.Uuid
+  tenantId     String       @db.Uuid
+  campaignId   String       @db.Uuid
+  name         String
+  description  String?
+  audienceType AudienceType
+  criteria     Json
+  contactIds   Json?
+  totalCount   Int          @default(0)
+  activeCount  Int          @default(0)
+  isActive     Boolean      @default(true)
+  lastUpdated  DateTime     @default(now())
+  createdBy    String       @db.Uuid
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator      User         @relation("CampaignAudienceCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, campaignId, name])
+  @@index([tenantId, campaignId])
+  @@map("campaign_audiences")
+}
+
+model CampaignAnalytics {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  campaignId   String   @db.Uuid
+  reportDate   DateTime
+  hour         Int?
+  sent         Int      @default(0)
+  delivered    Int      @default(0)
+  opened       Int      @default(0)
+  clicked      Int      @default(0)
+  bounced      Int      @default(0)
+  unsubscribed Int      @default(0)
+  spam         Int      @default(0)
+  conversions  Int      @default(0)
+  revenue      Decimal  @default(0) @db.Decimal(10, 2)
+  cost         Decimal  @default(0) @db.Decimal(10, 2)
+  uniqueOpens  Int      @default(0)
+  uniqueClicks Int      @default(0)
+  forwardCount Int      @default(0)
+  shareCount   Int      @default(0)
+  deviceData   Json?
+  locationData Json?
+  createdAt    DateTime @default(now())
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, reportDate, hour])
+  @@index([tenantId, campaignId, reportDate])
+  @@map("campaign_analytics")
+}
+
+model CampaignEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  campaignId String   @db.Uuid
+  contactId  String?  @db.Uuid
+  eventType  String
+  eventData  Json?
+  userAgent  String?
+  ipAddress  String?
+  location   Json?
+  referrer   String?
+  timestamp  DateTime @default(now())
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, campaignId, eventType])
+  @@index([tenantId, contactId])
+  @@index([tenantId, timestamp])
+  @@map("campaign_events")
+}
+
+model CampaignAsset {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  campaignId String   @db.Uuid
+  name       String
+  type       String
+  url        String
+  filename   String
+  fileSize   Int
+  mimeType   String
+  width      Int?
+  height     Int?
+  duration   Int?
+  isUsed     Boolean  @default(false)
+  clickCount Int      @default(0)
+  uploadedBy String   @db.Uuid
+  uploadedAt DateTime @default(now())
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader   User     @relation("CampaignAssetUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, campaignId])
+  @@index([tenantId, type])
+  @@map("campaign_assets")
+}
+
+model CampaignAutomation {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @db.Uuid
+  campaignId     String    @db.Uuid
+  name           String
+  description    String?
+  triggerType    String
+  triggerConfig  Json
+  actions        Json
+  conditions     Json?
+  isActive       Boolean   @default(true)
+  lastRun        DateTime?
+  nextRun        DateTime?
+  triggerCount   Int       @default(0)
+  executionCount Int       @default(0)
+  errorCount     Int       @default(0)
+  lastError      String?
+  createdBy      String    @db.Uuid
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator        User      @relation("CampaignAutomationCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, campaignId, name])
+  @@index([tenantId, campaignId])
+  @@index([tenantId, isActive, nextRun])
+  @@map("campaign_automations")
+}
+
+model CampaignTag {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  campaignId String   @db.Uuid
+  name       String
+  color      String?  @db.VarChar(7)
+  createdBy  String   @db.Uuid
+  createdAt  DateTime @default(now())
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator    User     @relation("CampaignTagCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, name])
+  @@index([tenantId, campaignId])
+  @@map("campaign_tags")
+}
+
+model Feedback {
+  id                  String                @id @default(uuid()) @db.Uuid
+  tenantId            String                @db.Uuid
+  title               String
+  description         String
+  type                FeedbackType          @default(general)
+  status              FeedbackStatus        @default(submitted)
+  priority            FeedbackPriority      @default(medium)
+  source              FeedbackSource        @default(web_form)
+  sentiment           FeedbackSentiment?
+  sentimentScore      Decimal?              @db.Decimal(3, 2)
+  sentimentConfidence Decimal?              @db.Decimal(3, 2)
+  contactName         String?
+  contactEmail        String?
+  contactPhone        String?
+  contactCompany      String?
+  userId              String?               @db.Uuid
+  categoryId          String?               @db.Uuid
+  subcategoryId       String?               @db.Uuid
+  tags                String[]
+  productArea         String?
+  featureContext      String?
+  pageUrl             String?
+  userAgent           String?
+  browserInfo         Json?
+  urgency             String?
+  businessImpact      String?
+  customerImpact      String?
+  assignedTo          String?               @db.Uuid
+  assignedAt          DateTime?
+  estimatedEffort     String?
+  actualEffort        String?
+  resolution          String?
+  resolutionType      String?
+  resolvedAt          DateTime?
+  resolvedBy          String?               @db.Uuid
+  issueNumber         String?
+  externalId          String?
+  externalUrl         String?
+  upvotes             Int                   @default(0)
+  downvotes           Int                   @default(0)
+  viewCount           Int                   @default(0)
+  followerCount       Int                   @default(0)
+  isPublic            Boolean               @default(false)
+  allowVoting         Boolean               @default(true)
+  allowComments       Boolean               @default(true)
+  isArchived          Boolean               @default(false)
+  slug                String
+  referenceNumber     String                @unique
+  submittedBy         String?               @db.Uuid
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  lastActivity        DateTime              @default(now())
+  assignee            User?                 @relation("FeedbackAssignee", fields: [assignedTo], references: [id])
+  category            FeedbackCategory?     @relation(fields: [categoryId], references: [id])
+  resolver            User?                 @relation("FeedbackResolver", fields: [resolvedBy], references: [id])
+  subcategory         FeedbackSubcategory?  @relation(fields: [subcategoryId], references: [id])
+  submitter           User?                 @relation("FeedbackSubmitter", fields: [submittedBy], references: [id])
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                User?                 @relation("FeedbackUser", fields: [userId], references: [id])
+  activities          FeedbackActivity[]
+  attachments         FeedbackAttachment[]
+  comments            FeedbackComment[]
+  customValues        FeedbackCustomValue[]
+  followers           FeedbackFollower[]
+  linkedItems         FeedbackLink[]        @relation("LinkedFeedback")
+  linkSources         FeedbackLink[]        @relation("SourceFeedback")
+  votes               FeedbackVote[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@index([tenantId, priority])
+  @@index([tenantId, source])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, assignedTo])
+  @@index([tenantId, userId])
+  @@index([tenantId, createdAt])
+  @@index([contactEmail])
+  @@index([isPublic, status])
+  @@map("feedback")
+}
+
+model FeedbackCategory {
+  id              String                @id @default(uuid()) @db.Uuid
+  tenantId        String                @db.Uuid
+  name            String
+  description     String?
+  color           String?               @db.VarChar(7)
+  icon            String?
+  isActive        Boolean               @default(true)
+  sortOrder       Int                   @default(0)
+  autoAssignTo    String?               @db.Uuid
+  defaultPriority FeedbackPriority      @default(medium)
+  createdBy       String                @db.Uuid
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  feedback        Feedback[]
+  autoAssignee    User?                 @relation("CategoryAutoAssignee", fields: [autoAssignTo], references: [id])
+  creator         User                  @relation("FeedbackCategoryCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subcategories   FeedbackSubcategory[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("feedback_categories")
+}
+
+model FeedbackSubcategory {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  categoryId  String           @db.Uuid
+  name        String
+  description String?
+  isActive    Boolean          @default(true)
+  sortOrder   Int              @default(0)
+  createdBy   String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  feedback    Feedback[]
+  category    FeedbackCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  creator     User             @relation("FeedbackSubcategoryCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, categoryId, name])
+  @@index([tenantId, categoryId])
+  @@map("feedback_subcategories")
+}
+
+model FeedbackComment {
+  id           String            @id @default(uuid()) @db.Uuid
+  tenantId     String            @db.Uuid
+  feedbackId   String            @db.Uuid
+  parentId     String?           @db.Uuid
+  content      String
+  isPrivate    Boolean           @default(false)
+  isResolution Boolean           @default(false)
+  createdBy    String            @db.Uuid
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  creator      User              @relation("FeedbackCommentCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  feedback     Feedback          @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  parent       FeedbackComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      FeedbackComment[] @relation("CommentReplies")
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, feedbackId])
+  @@index([tenantId, createdAt])
+  @@map("feedback_comments")
+}
+
+model FeedbackVote {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  feedbackId String   @db.Uuid
+  userId     String   @db.Uuid
+  isUpvote   Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User     @relation("FeedbackVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, feedbackId])
+  @@index([tenantId, feedbackId])
+  @@map("feedback_votes")
+}
+
+model FeedbackAttachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  feedbackId   String   @db.Uuid
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  url          String
+  width        Int?
+  height       Int?
+  duration     Int?
+  uploadedBy   String   @db.Uuid
+  uploadedAt   DateTime @default(now())
+  feedback     Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader     User     @relation("FeedbackAttachmentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, feedbackId])
+  @@map("feedback_attachments")
+}
+
+model FeedbackActivity {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @db.Uuid
+  feedbackId  String               @db.Uuid
+  type        FeedbackActivityType
+  title       String
+  description String?
+  oldValue    Json?
+  newValue    Json?
+  metadata    Json?
+  createdBy   String               @db.Uuid
+  createdAt   DateTime             @default(now())
+  creator     User                 @relation("FeedbackActivityCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  feedback    Feedback             @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, feedbackId])
+  @@index([tenantId, type])
+  @@index([tenantId, createdAt])
+  @@map("feedback_activities")
+}
+
+model FeedbackFollower {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @db.Uuid
+  feedbackId           String   @db.Uuid
+  userId               String   @db.Uuid
+  notifyOnStatusChange Boolean  @default(true)
+  notifyOnComments     Boolean  @default(true)
+  notifyOnAssignment   Boolean  @default(false)
+  notifyOnResolution   Boolean  @default(true)
+  emailNotifications   Boolean  @default(true)
+  followedAt           DateTime @default(now())
+  feedback             Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                 User     @relation("FeedbackFollowerUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, feedbackId])
+  @@index([tenantId, feedbackId])
+  @@map("feedback_followers")
+}
+
+model FeedbackLink {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  sourceFeedbackId String   @db.Uuid
+  linkedFeedbackId String   @db.Uuid
+  linkType         String
+  description      String?
+  createdBy        String   @db.Uuid
+  createdAt        DateTime @default(now())
+  creator          User     @relation("FeedbackLinkCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  linkedFeedback   Feedback @relation("LinkedFeedback", fields: [linkedFeedbackId], references: [id], onDelete: Cascade)
+  sourceFeedback   Feedback @relation("SourceFeedback", fields: [sourceFeedbackId], references: [id], onDelete: Cascade)
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceFeedbackId, linkedFeedbackId, linkType])
+  @@index([tenantId, sourceFeedbackId])
+  @@index([tenantId, linkedFeedbackId])
+  @@map("feedback_links")
+}
+
+model FeedbackCustomField {
+  id          String                @id @default(uuid()) @db.Uuid
+  tenantId    String                @db.Uuid
+  name        String
+  type        String
+  isRequired  Boolean               @default(false)
+  options     Json?
+  label       String?
+  placeholder String?
+  helpText    String?
+  sortOrder   Int                   @default(0)
+  isActive    Boolean               @default(true)
+  showInList  Boolean               @default(false)
+  createdBy   String                @db.Uuid
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  creator     User                  @relation("FeedbackCustomFieldCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values      FeedbackCustomValue[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("feedback_custom_fields")
+}
+
+model FeedbackCustomValue {
+  id         String              @id @default(uuid()) @db.Uuid
+  tenantId   String              @db.Uuid
+  feedbackId String              @db.Uuid
+  fieldId    String              @db.Uuid
+  value      String
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  feedback   Feedback            @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  field      FeedbackCustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([feedbackId, fieldId])
+  @@index([tenantId, feedbackId])
+  @@map("feedback_custom_values")
+}
+
+model Employee {
+  id                    String                @id @default(uuid()) @db.Uuid
+  tenantId              String                @db.Uuid
+  userId                String?               @unique @db.Uuid
+  firstName             String
+  lastName              String
+  middleName            String?
+  displayName           String
+  email                 String
+  phone                 String?
+  alternateEmail        String?
+  employeeNumber        String                @unique
+  status                EmploymentStatus      @default(active)
+  type                  EmploymentType        @default(full_time)
+  jobTitle              String
+  departmentId          String?               @db.Uuid
+  managerId             String?               @db.Uuid
+  locationId            String?               @db.Uuid
+  hireDate              DateTime
+  startDate             DateTime?
+  endDate               DateTime?
+  salary                Decimal?              @db.Decimal(10, 2)
+  hourlyRate            Decimal?              @db.Decimal(8, 2)
+  currency              String                @default("USD")
+  payGrade              String?
+  payFrequency          String?
+  address               Json?
+  emergencyContact      Json?
+  taxId                 String?
+  workEligibility       Boolean               @default(true)
+  backgroundCheck       Boolean               @default(false)
+  healthInsurance       Boolean               @default(false)
+  dentalInsurance       Boolean               @default(false)
+  visionInsurance       Boolean               @default(false)
+  retirementPlan        Boolean               @default(false)
+  ptoBalance            Decimal               @default(0) @db.Decimal(5, 2)
+  sickBalance           Decimal               @default(0) @db.Decimal(5, 2)
+  lastReviewDate        DateTime?
+  nextReviewDate        DateTime?
+  performanceRating     String?
+  goals                 Json?
+  skills                String[]
+  certifications        Json?
+  isActive              Boolean               @default(true)
+  notes                 String?
+  createdBy             String                @db.Uuid
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  compensationHistory   CompensationHistory[]
+  departmentHead        Department[]          @relation("DepartmentHead")
+  employeeBenefits      EmployeeBenefit[]
+  employeeDocuments     EmployeeDocument[]
+  employeeSkills        EmployeeSkill[]
+  creator               User                  @relation("EmployeeCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  department            Department?           @relation(fields: [departmentId], references: [id])
+  location              Location?             @relation(fields: [locationId], references: [id])
+  manager               Employee?             @relation("ManagerReports", fields: [managerId], references: [id])
+  directReports         Employee[]            @relation("ManagerReports")
+  tenant                Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                  User?                 @relation("UserEmployee", fields: [userId], references: [id])
+  coveringLeaveRequests LeaveRequest[]        @relation("CoveringEmployee")
+  leaveRequests         LeaveRequest[]
+  performanceReviews    PerformanceReview[]
+  timeEntries           TimeEntry[]
+
+  @@unique([tenantId, employeeNumber])
+  @@unique([tenantId, email])
+  @@index([tenantId, status])
+  @@index([tenantId, departmentId])
+  @@index([tenantId, managerId])
+  @@index([tenantId, hireDate])
+  @@map("employees")
+}
+
+model Department {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @db.Uuid
+  name        String
+  description String?
+  parentId    String?      @db.Uuid
+  headId      String?      @db.Uuid
+  budget      Decimal?     @db.Decimal(12, 2)
+  budgetYear  Int?
+  headcount   Int          @default(0)
+  isActive    Boolean      @default(true)
+  costCenter  String?
+  createdBy   String       @db.Uuid
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  creator     User         @relation("DepartmentCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  head        Employee?    @relation("DepartmentHead", fields: [headId], references: [id])
+  parent      Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children    Department[] @relation("DepartmentHierarchy")
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employees   Employee[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, parentId])
+  @@index([tenantId, isActive])
+  @@map("departments")
+}
+
+model Location {
+  id             String     @id @default(uuid()) @db.Uuid
+  tenantId       String     @db.Uuid
+  name           String
+  description    String?
+  address        String
+  city           String
+  state          String?
+  postalCode     String?
+  country        String     @default("US")
+  phone          String?
+  email          String?
+  timezone       String     @default("UTC")
+  capacity       Int?
+  isActive       Boolean    @default(true)
+  isHeadquarters Boolean    @default(false)
+  createdBy      String     @db.Uuid
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  employees      Employee[]
+  creator        User       @relation("LocationCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("locations")
+}
+
+model LeaveRequest {
+  id                 String      @id @default(uuid()) @db.Uuid
+  tenantId           String      @db.Uuid
+  employeeId         String      @db.Uuid
+  type               LeaveType
+  status             LeaveStatus @default(pending)
+  startDate          DateTime
+  endDate            DateTime
+  returnDate         DateTime?
+  totalDays          Decimal     @db.Decimal(5, 2)
+  reason             String?
+  notes              String?
+  approvedBy         String?     @db.Uuid
+  approvedAt         DateTime?
+  rejectedReason     String?
+  coveringEmployeeId String?     @db.Uuid
+  handoverNotes      String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  approver           User?       @relation("LeaveRequestApprover", fields: [approvedBy], references: [id])
+  coveringEmployee   Employee?   @relation("CoveringEmployee", fields: [coveringEmployeeId], references: [id])
+  employee           Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tenant             Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, status])
+  @@index([tenantId, startDate])
+  @@map("leave_requests")
+}
+
+model TimeEntry {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @db.Uuid
+  employeeId    String    @db.Uuid
+  date          DateTime  @db.Date
+  clockIn       DateTime?
+  clockOut      DateTime?
+  breakStart    DateTime?
+  breakEnd      DateTime?
+  regularHours  Decimal   @default(0) @db.Decimal(5, 2)
+  overtimeHours Decimal   @default(0) @db.Decimal(5, 2)
+  totalHours    Decimal   @default(0) @db.Decimal(5, 2)
+  projectId     String?   @db.Uuid
+  taskId        String?   @db.Uuid
+  description   String?
+  status        String    @default("draft")
+  approvedBy    String?   @db.Uuid
+  approvedAt    DateTime?
+  location      String?
+  ipAddress     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  approver      User?     @relation("TimeEntryApprover", fields: [approvedBy], references: [id])
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, date])
+  @@index([tenantId, employeeId])
+  @@index([tenantId, date])
+  @@index([tenantId, status])
+  @@map("time_entries")
+}
+
+model PerformanceReview {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tenantId             String    @db.Uuid
+  employeeId           String    @db.Uuid
+  reviewerId           String    @db.Uuid
+  periodStart          DateTime  @db.Date
+  periodEnd            DateTime  @db.Date
+  type                 String    @default("annual")
+  status               String    @default("draft")
+  overallRating        Decimal?  @db.Decimal(3, 2)
+  goalAchievement      Decimal?  @db.Decimal(3, 2)
+  competencyRating     Decimal?  @db.Decimal(3, 2)
+  strengths            String?
+  improvements         String?
+  accomplishments      String?
+  goals                Json?
+  development          Json?
+  managerComments      String?
+  employeeComments     String?
+  hrComments           String?
+  employeeAcknowledged Boolean   @default(false)
+  acknowledgedAt       DateTime?
+  nextReviewDate       DateTime?
+  dueDate              DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  employee             Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewer             User      @relation("PerformanceReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, reviewerId])
+  @@index([tenantId, periodEnd])
+  @@index([tenantId, status])
+  @@map("performance_reviews")
+}
+
+model EmployeeBenefit {
+  id                   String    @id @default(uuid()) @db.Uuid
+  tenantId             String    @db.Uuid
+  employeeId           String    @db.Uuid
+  benefitType          String
+  planName             String
+  provider             String?
+  coverage             String    @default("employee")
+  employeeContribution Decimal?  @db.Decimal(8, 2)
+  employerContribution Decimal?  @db.Decimal(8, 2)
+  totalCost            Decimal?  @db.Decimal(8, 2)
+  effectiveDate        DateTime  @db.Date
+  endDate              DateTime? @db.Date
+  isActive             Boolean   @default(true)
+  enrolledBy           String?   @db.Uuid
+  enrolledAt           DateTime  @default(now())
+  notes                String?
+  employee             Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  enroller             User?     @relation("BenefitEnroller", fields: [enrolledBy], references: [id])
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, benefitType])
+  @@index([tenantId, effectiveDate])
+  @@map("employee_benefits")
+}
+
+model EmployeeDocument {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @db.Uuid
+  employeeId        String    @db.Uuid
+  name              String
+  type              String
+  description       String?
+  filename          String
+  fileSize          Int
+  mimeType          String
+  url               String
+  isConfidential    Boolean   @default(false)
+  isRequired        Boolean   @default(false)
+  category          String?
+  requiresSignature Boolean   @default(false)
+  signedAt          DateTime?
+  acknowledgedAt    DateTime?
+  expiresAt         DateTime?
+  accessLevel       String    @default("employee")
+  uploadedBy        String    @db.Uuid
+  uploadedAt        DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader          User      @relation("EmployeeDocumentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, type])
+  @@index([tenantId, expiresAt])
+  @@map("employee_documents")
+}
+
+model EmployeeSkill {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @db.Uuid
+  employeeId        String    @db.Uuid
+  skillName         String
+  category          String?
+  level             String    @default("beginner")
+  yearsOfExperience Decimal?  @db.Decimal(4, 1)
+  certificationName String?
+  certificationDate DateTime?
+  expirationDate    DateTime?
+  selfRating        Int?
+  managerRating     Int?
+  lastAssessed      DateTime?
+  isTargetSkill     Boolean   @default(false)
+  targetLevel       String?
+  developmentPlan   String?
+  isPublic          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, skillName])
+  @@index([tenantId, skillName])
+  @@index([tenantId, category])
+  @@map("employee_skills")
+}
+
+model CompensationHistory {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  employeeId       String   @db.Uuid
+  changeType       String
+  reason           String?
+  previousSalary   Decimal? @db.Decimal(10, 2)
+  newSalary        Decimal? @db.Decimal(10, 2)
+  previousJobTitle String?
+  newJobTitle      String?
+  bonusAmount      Decimal? @db.Decimal(10, 2)
+  bonusType        String?
+  equityShares     Int?
+  equityValue      Decimal? @db.Decimal(12, 2)
+  vestingSchedule  Json?
+  effectiveDate    DateTime @db.Date
+  approvedBy       String   @db.Uuid
+  approvedAt       DateTime @default(now())
+  notes            String?
+  createdAt        DateTime @default(now())
+  approver         User     @relation("CompensationApprover", fields: [approvedBy], references: [id], onDelete: Cascade)
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId])
+  @@index([tenantId, effectiveDate])
+  @@index([tenantId, changeType])
+  @@map("compensation_history")
+}
+
+model AuditLog {
+  id           String      @id @default(uuid()) @db.Uuid
+  tenantId     String      @db.Uuid
+  userId       String      @db.Uuid
+  userEmail    String
+  userName     String
+  ipAddress    String?
+  userAgent    String?
+  sessionId    String?
+  action       AuditAction
+  entityType   String
+  entityId     String?
+  entityName   String?
+  oldValues    Json?
+  newValues    Json?
+  metadata     Json?
+  success      Boolean     @default(true)
+  errorMessage String?
+  createdAt    DateTime    @default(now())
+  duration     Int?
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User        @relation("AuditLogUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, userId, createdAt])
+  @@index([tenantId, entityType, entityId])
+  @@index([tenantId, action])
+  @@map("audit_logs")
+}
 
 enum RoleName {
   super_admin
@@ -34,11 +2887,20 @@ enum PermissionAction {
 }
 
 enum LinkKind {
-  references
-  duplicates
-  relates
+  parent_of
+  child_of
   depends_on
-  blocked_by
+  blocks
+  references
+  mentioned_in
+  attached_to
+  assigned_to
+  owned_by
+  collaborates_with
+  triggers
+  completes
+  relates
+  duplicates
 }
 
 enum DocKind {
@@ -91,478 +2953,411 @@ enum MessageChannelKind {
   internal
 }
 
-// -------------------- Core Tenancy & Users --------------------
-
-model Tenant {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  memberships      Membership[]
-  groups           Group[]
-  roles            Role[]
-  membershipGroups MembershipGroup[]
-  permissionGrants PermissionGrant[]
-  taggings         Tagging[]
-  entityLinks      EntityLink[]
-  fileAssets       FileAsset[]
-  attachments      Attachment[]
-  messageChannels  MessageChannel[]
-  threads          Thread[]
-  messages         Message[]
-  tasks            Task[]
-  taskComments     TaskComment[]
-  libraryDocs      LibraryDoc[]
-  librarySections  LibrarySection[]
-  docSectionLinks  DocSectionLink[]
-  docPublishes     DocPublish[]
-  notifications    Notification[]
-  watches          Watch[]
-  activityEvents   ActivityEvent[]
-  searchIndexes    SearchIndex[]
-
-  // generic helpers
-  tags Tag[]
+enum TaskDependencyType {
+  FS
+  SS
+  FF
+  SF
 }
 
-model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  email       String   @unique
-  displayName String
-  avatarUrl   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  memberships   Membership[]
-  notifications Notification[]  @relation("UserNotifications")
-  activities    ActivityEvent[] @relation("UserActivities")
-  watches       Watch[]
-
-  @@index([email])
+enum CustomFieldType {
+  text
+  number
+  boolean
+  date
+  select
+  multiselect
+  user
+  url
 }
 
-model Membership {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  userId    String   @db.Uuid
-  roleId    String?  @db.Uuid
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role   Role?  @relation(fields: [roleId], references: [id])
-
-  groups MembershipGroup[]
-
-  @@unique([tenantId, userId])
-  @@index([tenantId])
+enum WikiPageStatus {
+  draft
+  published
+  archived
 }
 
-model Group {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  name      String
-  slug      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  members MembershipGroup[]
-
-  @@unique([tenantId, slug])
-  @@index([tenantId, name])
+enum WikiLinkType {
+  internal
+  mention
+  reference
 }
 
-model MembershipGroup {
-  id           String   @id @default(uuid()) @db.Uuid
-  tenantId     String   @db.Uuid
-  membershipId String   @db.Uuid
-  groupId      String   @db.Uuid
-  createdAt    DateTime @default(now())
-
-  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  group      Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@unique([membershipId, groupId])
-  @@index([tenantId, groupId])
+enum SectionType {
+  text
+  code
+  image
+  video
+  table
+  chart
+  checklist
+  callout
+  quote
+  template
 }
 
-model Role {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  name      RoleName
-  label     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  memberships Membership[]
-  grants      PermissionGrant[]
-
-  @@unique([tenantId, name])
-  @@index([tenantId])
+enum SectionStatus {
+  draft
+  published
+  archived
+  deprecated
 }
 
-// Resource-oriented permissions (flexible for any module)
-model PermissionGrant {
-  id        String           @id @default(uuid()) @db.Uuid
-  tenantId  String           @db.Uuid
-  roleId    String           @db.Uuid
-  resource  String // e.g. "task", "doc", "thread", "finance.invoice", "admin.users"
-  action    PermissionAction // read|write|update|delete|admin
-  condition Json? // optional JSON rule (e.g., {"own": true})
-  createdAt DateTime         @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, resource, action])
-  @@index([tenantId, resource, action])
+enum InvoiceStatus {
+  draft
+  sent
+  viewed
+  partial
+  paid
+  overdue
+  cancelled
+  refunded
 }
 
-// -------------------- Tags (generic) --------------------
-
-model Tag {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  label     String
-  color     String? // hex token from theme
-  createdAt DateTime @default(now())
-
-  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  uses   Tagging[]
-
-  @@unique([tenantId, label])
-  @@index([tenantId])
+enum PaymentStatus {
+  pending
+  processing
+  completed
+  failed
+  cancelled
+  refunded
 }
 
-// Generic tagging for any entity
-model Tagging {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  tagId      String   @db.Uuid
-  entityType String // "task" | "doc" | "thread" | "file" | etc.
-  entityId   String   @db.Uuid
-  createdAt  DateTime @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, tagId, entityType, entityId])
-  @@index([tenantId, entityType, entityId])
+enum PaymentMethod {
+  bank_transfer
+  credit_card
+  debit_card
+  paypal
+  stripe
+  cash
+  check
+  other
 }
 
-// -------------------- Cross-entity Linking --------------------
-
-model EntityLink {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  fromType  String
-  fromId    String   @db.Uuid
-  toType    String
-  toId      String   @db.Uuid
-  kind      LinkKind @default(relates)
-  note      String?
-  createdBy String   @db.Uuid
-  createdAt DateTime @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, fromType, fromId])
-  @@index([tenantId, toType, toId])
-  @@index([tenantId, kind])
+enum InvoiceActivityType {
+  created
+  sent
+  viewed
+  payment_received
+  payment_failed
+  reminded
+  cancelled
+  refunded
+  updated
+  note_added
 }
 
-// -------------------- Files & Attachments --------------------
-
-model FileAsset {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  bucket     String
-  objectKey  String
-  mimeType   String
-  sizeBytes  Int
-  sha256     String?
-  uploaderId String?  @db.Uuid
-  createdAt  DateTime @default(now())
-
-  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  attachments Attachment[]
-
-  @@index([tenantId, createdAt])
-  @@index([tenantId, objectKey])
+enum ReminderType {
+  before_due
+  on_due_date
+  after_due
+  custom
 }
 
-model Attachment {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  fileId     String   @db.Uuid
-  entityType String // "task" | "thread" | "doc" | ...
-  entityId   String   @db.Uuid
-  createdAt  DateTime @default(now())
-
-  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  file   FileAsset @relation(fields: [fileId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, entityType, entityId])
+enum ExpenseStatus {
+  draft
+  pending
+  approved
+  rejected
+  reimbursed
+  paid
 }
 
-// -------------------- Messaging --------------------
-
-model MessageChannel {
-  id        String             @id @default(uuid()) @db.Uuid
-  tenantId  String             @db.Uuid
-  kind      MessageChannelKind
-  name      String
-  address   String? // inbox email, phone number, handle, etc.
-  createdAt DateTime           @default(now())
-
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  threads Thread[]
-
-  @@unique([tenantId, kind, address])
-  @@index([tenantId, kind])
+enum ExpenseType {
+  travel
+  meals
+  accommodation
+  transportation
+  office_supplies
+  software
+  equipment
+  marketing
+  utilities
+  professional_services
+  training
+  other
 }
 
-model Thread {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  channelId  String   @db.Uuid
-  subject    String?
-  status     String   @default("open") // open | snoozed | closed
-  priority   String   @default("normal") // normal | high
-  assigneeId String?  @db.Uuid
-  labels     String[] @db.Text
-  lastAt     DateTime @default(now())
-  createdAt  DateTime @default(now())
-
-  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  channel  MessageChannel @relation(fields: [channelId], references: [id])
-  messages Message[]
-
-  @@index([tenantId, lastAt])
-  @@index([tenantId, status])
-  @@index([tenantId, assigneeId])
-  @@index([tenantId], map: "thread_tenant_idx")
+enum ProductStatus {
+  draft
+  active
+  inactive
+  discontinued
+  out_of_stock
 }
 
-model Message {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  threadId   String   @db.Uuid
-  authorId   String?  @db.Uuid // nullable for external senders
-  authorAddr String?
-  bodyText   String
-  bodyMd     String?
-  sentAt     DateTime @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, threadId, sentAt])
+enum ProductType {
+  physical
+  digital
+  service
+  subscription
+  bundle
 }
 
-// -------------------- Tasks --------------------
-
-model Task {
-  id          String       @id @default(uuid()) @db.Uuid
-  tenantId    String       @db.Uuid
-  number      Int // human-friendly incremental per-tenant (handle in app/tx)
-  title       String
-  description String?
-  status      TaskStatus   @default(todo)
-  priority    TaskPriority @default(medium)
-  assigneeIds String[]     @db.Text
-  labels      String[]     @db.Text
-  dueAt       DateTime?
-  createdBy   String?      @db.Uuid
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
-
-  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  comments TaskComment[]
-
-  @@unique([tenantId, number])
-  @@index([tenantId, status, priority])
-  @@index([tenantId, updatedAt])
-  @@index([tenantId, dueAt])
+enum PricingModel {
+  one_time
+  recurring
+  usage_based
+  tiered
+  freemium
 }
 
-model TaskComment {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  taskId    String   @db.Uuid
-  authorId  String?  @db.Uuid
-  bodyMd    String
-  createdAt DateTime @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, taskId, createdAt])
+enum RoadmapStatus {
+  planning
+  active
+  paused
+  completed
+  cancelled
+  archived
 }
 
-// -------------------- Library (Wiki/Docs) --------------------
-
-model LibraryDoc {
-  id        String    @id @default(uuid()) @db.Uuid
-  tenantId  String    @db.Uuid
-  title     String
-  slug      String?
-  kind      DocKind   @default(wiki)
-  status    DocStatus @default(draft)
-  ownerId   String?   @db.Uuid
-  tags      String[]  @db.Text
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  bodyMd     String?
-  bodyTypist Json?
-
-  sections  DocSectionLink[]
-  publishes DocPublish[]
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, slug])
-  @@index([tenantId, status])
-  @@index([tenantId, kind])
-  @@index([tenantId, updatedAt])
-  @@map("library_docs")
+enum RoadmapVisibility {
+  public
+  internal
+  private
 }
 
-model LibrarySection {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  name       String
-  bodyMd     String?
-  bodyTypist Json?
-  version    Int      @default(1)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  usedBy DocSectionLink[]
-  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, name, version])
-  @@index([tenantId, name])
-  @@map("library_sections")
+enum ItemStatus {
+  idea
+  planned
+  in_progress
+  in_review
+  completed
+  cancelled
+  on_hold
 }
 
-model DocSectionLink {
-  id        String   @id @default(uuid()) @db.Uuid
-  tenantId  String   @db.Uuid
-  docId     String   @db.Uuid
-  sectionId String   @db.Uuid
-  position  Int      @default(0)
-  params    Json?
-  createdAt DateTime @default(now())
-
-  doc     LibraryDoc     @relation(fields: [docId], references: [id], onDelete: Cascade)
-  section LibrarySection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, docId, position])
-  @@map("doc_section_links")
+enum ItemType {
+  feature
+  enhancement
+  bug_fix
+  research
+  integration
+  infrastructure
+  maintenance
+  epic
 }
 
-model DocPublish {
-  id        String       @id @default(uuid()) @db.Uuid
-  tenantId  String       @db.Uuid
-  docId     String       @db.Uuid
-  scope     PublishScope
-  userIds   String[]     @db.Text
-  groupIds  String[]     @db.Text
-  urlPath   String?
-  createdAt DateTime     @default(now())
-
-  doc    LibraryDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
-  tenant Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, scope])
-  @@map("doc_publishes")
+enum ItemPriority {
+  low
+  medium
+  high
+  critical
+  urgent
 }
 
-// -------------------- Notifications & Activity --------------------
-
-model Notification {
-  id         String    @id @default(uuid()) @db.Uuid
-  tenantId   String    @db.Uuid
-  userId     String    @db.Uuid
-  entityType String
-  entityId   String    @db.Uuid
-  kind       String // "assigned","mentioned","linked","status_changed",...
-  payload    Json?
-  readAt     DateTime?
-  createdAt  DateTime  @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User   @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId, userId, createdAt])
-  @@index([tenantId, entityType, entityId])
+enum RoadmapActivityType {
+  item_created
+  item_updated
+  status_changed
+  priority_changed
+  target_date_changed
+  progress_updated
+  comment_added
+  vote_added
+  watcher_added
+  attachment_added
+  moved_to_release
+  moved_to_category
 }
 
-model Watch {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  userId     String   @db.Uuid
-  entityType String
-  entityId   String   @db.Uuid
-  createdAt  DateTime @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, userId, entityType, entityId])
-  @@index([tenantId, entityType, entityId])
+enum CampaignStatus {
+  draft
+  scheduled
+  active
+  paused
+  completed
+  cancelled
+  archived
 }
 
-model ActivityEvent {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  actorId    String?  @db.Uuid
-  entityType String
-  entityId   String   @db.Uuid
-  action     String // "create","update","link","comment","publish"...
-  meta       Json?
-  createdAt  DateTime @default(now())
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  actor  User?  @relation("UserActivities", fields: [actorId], references: [id])
-
-  @@index([tenantId, entityType, entityId, createdAt])
+enum CampaignType {
+  email
+  sms
+  social_media
+  push_notification
+  direct_mail
+  webinar
+  event
+  survey
+  multi_channel
+  drip_sequence
+  transactional
 }
 
-// -------------------- Search (FTS-ready) --------------------
-// NOTE: Prisma does not natively support tsvector columns; you can add them
-// via SQL migrations. Optionally create a separate SearchIndex table or
-// use generated columns on key entities. Provided here is a generic index
-// table pattern.
+enum CampaignObjective {
+  awareness
+  engagement
+  lead_generation
+  conversion
+  retention
+  re_engagement
+  upsell
+  cross_sell
+  referral
+  feedback
+}
 
-model SearchIndex {
-  id         String   @id @default(uuid()) @db.Uuid
-  tenantId   String   @db.Uuid
-  entityType String // "task","doc","thread"
-  entityId   String   @db.Uuid
-  // denormalized text used for search previews
-  title      String?
-  snippet    String?
-  // raw text blob to index (app or trigger maintains)
-  content    String
-  // When using FTS, create a tsvector column via SQL and a GIN index
-  // searchVec Unsupported("tsvector")?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+enum MessageStatus {
+  draft
+  scheduled
+  sending
+  sent
+  delivered
+  opened
+  clicked
+  bounced
+  failed
+  unsubscribed
+  spam
+}
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+enum AudienceType {
+  all_contacts
+  segment
+  list
+  custom_filter
+  lookalike
+  behavioral
+  demographic
+  geographic
+}
 
-  @@unique([tenantId, entityType, entityId])
-  @@index([tenantId, updatedAt])
+enum FeedbackType {
+  suggestion
+  bug_report
+  feature_request
+  complaint
+  compliment
+  general
+  support
+  question
+}
+
+enum FeedbackStatus {
+  submitted
+  acknowledged
+  in_review
+  planned
+  in_progress
+  implemented
+  rejected
+  on_hold
+  duplicate
+  archived
+}
+
+enum FeedbackPriority {
+  low
+  medium
+  high
+  critical
+  urgent
+}
+
+enum FeedbackSource {
+  web_form
+  email
+  phone
+  chat
+  survey
+  social_media
+  app
+  api
+  import
+}
+
+enum FeedbackSentiment {
+  very_negative
+  negative
+  neutral
+  positive
+  very_positive
+}
+
+enum FeedbackActivityType {
+  created
+  status_changed
+  priority_changed
+  assigned
+  unassigned
+  commented
+  voted
+  linked
+  unlinked
+  category_changed
+  resolution_added
+  tagged
+  followed
+  unfollowed
+  duplicated
+  archived
+  restored
+}
+
+enum EmploymentStatus {
+  active
+  inactive
+  terminated
+  on_leave
+  contractor
+  intern
+  part_time
+  full_time
+  consultant
+}
+
+enum EmploymentType {
+  permanent
+  contract
+  internship
+  freelance
+  consultant
+  temporary
+  seasonal
+  part_time
+  full_time
+}
+
+enum LeaveType {
+  vacation
+  sick
+  personal
+  maternity
+  paternity
+  bereavement
+  jury_duty
+  military
+  sabbatical
+  unpaid
+}
+
+enum LeaveStatus {
+  pending
+  approved
+  rejected
+  cancelled
+  in_progress
+  completed
+}
+
+enum AuditAction {
+  create
+  read
+  update
+  delete
+  login
+  logout
+  permission_grant
+  permission_revoke
+  export
+  import
+  bulk_update
+  bulk_delete
+  archive
+  restore
+  approve
+  reject
+  publish
+  unpublish
 }

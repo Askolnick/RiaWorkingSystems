@@ -3,9 +3,31 @@
 @tailwind utilities;
 
 @import '../../../packages/web-ui/tokens/ria.css';
+@import './tokens.css';
 @layer base {
   body {
     background-color: var(--bg);
     color: var(--text);
+  }
+}
+
+@layer utilities {
+  [data-delay="0"] {
+    animation-delay: 0s;
+  }
+  [data-delay="1"] {
+    animation-delay: 0.1s;
+  }
+  [data-delay="2"] {
+    animation-delay: 0.2s;
+  }
+  [data-font-preview] {
+    font-size: calc(var(--font-scale, 1) * 1rem);
+  }
+  [data-progress-bar] {
+    width: var(--progress, 0%);
+  }
+  [data-folder-indent] {
+    padding-left: var(--indent, 12px);
   }
 }

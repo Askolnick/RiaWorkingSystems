@@ -1,0 +1,1 @@
+import CenterGrid from '../components/CenterGrid';export default function Page(){return <main className='space-y-6'><h1 className='text-2xl font-semibold'>All Centers</h1><CenterGrid/></main>}

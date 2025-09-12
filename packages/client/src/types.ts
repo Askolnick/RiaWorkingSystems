@@ -6,6 +6,17 @@
 // consider generating types from your Prisma schema instead of maintaining
 // parallel definitions.
 
+// User type - basic user information
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  tenantId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface InvoiceLine {
   id: string;
   invoiceId: string;

@@ -25,21 +25,63 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
   
-  // Bundle analyzer (only in development)
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: (config, { isServer }) => {
-      if (!isServer) {
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'static',
-            openAnalyzer: false,
-          })
-        );
-      }
-      return config;
-    },
-  }),
+  // Webpack configuration for optimization and bundle analyzer
+  webpack: (config, { isServer }) => {
+    // Bundle analyzer (only in development with ANALYZE=true)
+    if (!isServer && process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false,
+        })
+      );
+    }
+
+    // Optimize bundle splitting
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          chunks: 'all',
+          cacheGroups: {
+            ...config.optimization.splitChunks.cacheGroups,
+            // Separate vendor chunks
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+              priority: 10,
+            },
+            // Separate UI components
+            ui: {
+              test: /[\\/]packages[\\/]web-ui[\\/]/,
+              name: 'ui-components',
+              chunks: 'all',
+              priority: 20,
+            },
+            // Separate client/store logic  
+            client: {
+              test: /[\\/]packages[\\/]client[\\/]/,
+              name: 'client-store',
+              chunks: 'all',
+              priority: 20,
+            },
+            // Common components
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 5,
+            },
+          },
+        },
+      };
+    }
+
+    return config;
+  },
   
   // Headers for security
   async headers() {

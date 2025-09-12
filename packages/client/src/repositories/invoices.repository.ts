@@ -1,0 +1,567 @@
+import { BaseRepository, MockRepository } from './base.repository';
+import type {
+  Invoice,
+  InvoiceWithItems,
+  InvoiceWithRelations,
+  InvoiceItem,
+  InvoicePayment,
+  InvoiceActivity,
+  InvoiceReminder,
+  InvoiceStats,
+  InvoiceAnalytics,
+  InvoiceTemplate,
+  InvoiceSettings,
+  CreateInvoiceData,
+  UpdateInvoiceData,
+  CreateInvoicePaymentData,
+  UpdateInvoicePaymentData,
+  CreateInvoiceReminderData,
+  InvoiceFilters,
+  PaymentFilters,
+  InvoiceSort,
+  InvoiceStatus,
+  PaymentStatus,
+  PaymentMethod,
+  BulkInvoiceAction,
+  InvoiceExportOptions,
+} from '@ria/invoices-server';
+
+export class InvoicesRepository extends BaseRepository<Invoice> {
+  protected endpoint = '/invoices';
+
+  // Invoice CRUD operations
+  async getInvoices(filters?: InvoiceFilters, sort?: InvoiceSort, page = 1, limit = 25) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, Array.isArray(value) ? value.join(',') : String(value));
+        }
+      });
+    }
+    if (sort) {
+      params.append('sortBy', sort.field);
+      params.append('sortOrder', sort.direction);
+    }
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    
+    return this.request('GET', `?${params}`);
+  }
+
+  async getInvoiceWithItems(id: string): Promise<{ data: InvoiceWithItems }> {
+    return this.request('GET', `/${id}/with-items`);
+  }
+
+  async getInvoiceWithRelations(id: string): Promise<{ data: InvoiceWithRelations }> {
+    return this.request('GET', `/${id}/relations`);
+  }
+
+  async createInvoice(data: CreateInvoiceData): Promise<{ data: Invoice }> {
+    return this.request('POST', '', data);
+  }
+
+  async updateInvoice(id: string, data: UpdateInvoiceData): Promise<{ data: Invoice }> {
+    return this.request('PUT', `/${id}`, data);
+  }
+
+  async deleteInvoice(id: string): Promise<void> {
+    return this.request('DELETE', `/${id}`);
+  }
+
+  async duplicateInvoice(id: string): Promise<{ data: Invoice }> {
+    return this.request('POST', `/${id}/duplicate`);
+  }
+
+  // Invoice status operations
+  async sendInvoice(id: string, email?: string): Promise<{ data: Invoice }> {
+    return this.request('POST', `/${id}/send`, { email });
+  }
+
+  async markAsPaid(id: string, paymentData?: CreateInvoicePaymentData): Promise<{ data: Invoice }> {
+    return this.request('POST', `/${id}/mark-paid`, paymentData);
+  }
+
+  async cancelInvoice(id: string, reason?: string): Promise<{ data: Invoice }> {
+    return this.request('POST', `/${id}/cancel`, { reason });
+  }
+
+  // Invoice items operations
+  async getInvoiceItems(invoiceId: string) {
+    return this.request('GET', `/${invoiceId}/items`);
+  }
+
+  async addInvoiceItem(invoiceId: string, item: Omit<InvoiceItem, 'id' | 'tenantId' | 'invoiceId'>) {
+    return this.request('POST', `/${invoiceId}/items`, item);
+  }
+
+  async updateInvoiceItem(invoiceId: string, itemId: string, item: Partial<InvoiceItem>) {
+    return this.request('PUT', `/${invoiceId}/items/${itemId}`, item);
+  }
+
+  async deleteInvoiceItem(invoiceId: string, itemId: string) {
+    return this.request('DELETE', `/${invoiceId}/items/${itemId}`);
+  }
+
+  // Payment operations
+  async getInvoicePayments(invoiceId: string) {
+    return this.request('GET', `/${invoiceId}/payments`);
+  }
+
+  async getPayments(filters?: PaymentFilters) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, Array.isArray(value) ? value.join(',') : String(value));
+        }
+      });
+    }
+    return this.request('GET', `/payments?${params}`);
+  }
+
+  async createPayment(data: CreateInvoicePaymentData): Promise<{ data: InvoicePayment }> {
+    return this.request('POST', `/payments`, data);
+  }
+
+  async updatePayment(paymentId: string, data: UpdateInvoicePaymentData): Promise<{ data: InvoicePayment }> {
+    return this.request('PUT', `/payments/${paymentId}`, data);
+  }
+
+  async deletePayment(paymentId: string): Promise<void> {
+    return this.request('DELETE', `/payments/${paymentId}`);
+  }
+
+  // Activity operations
+  async getInvoiceActivities(invoiceId: string) {
+    return this.request('GET', `/${invoiceId}/activities`);
+  }
+
+  async addInvoiceActivity(invoiceId: string, activity: Pick<InvoiceActivity, 'type' | 'description' | 'metadata'>) {
+    return this.request('POST', `/${invoiceId}/activities`, activity);
+  }
+
+  // Reminders operations
+  async getInvoiceReminders(invoiceId: string) {
+    return this.request('GET', `/${invoiceId}/reminders`);
+  }
+
+  async createReminder(data: CreateInvoiceReminderData): Promise<{ data: InvoiceReminder }> {
+    return this.request('POST', '/reminders', data);
+  }
+
+  async sendReminder(reminderId: string): Promise<void> {
+    return this.request('POST', `/reminders/${reminderId}/send`);
+  }
+
+  // Statistics and analytics
+  async getStats(): Promise<{ data: InvoiceStats }> {
+    return this.request('GET', '/stats');
+  }
+
+  async getAnalytics(dateRange?: { from: string; to: string }): Promise<{ data: InvoiceAnalytics }> {
+    const params = new URLSearchParams();
+    if (dateRange) {
+      params.append('from', dateRange.from);
+      params.append('to', dateRange.to);
+    }
+    return this.request('GET', `/analytics?${params}`);
+  }
+
+  // Templates operations
+  async getTemplates() {
+    return this.request('GET', '/templates');
+  }
+
+  async createTemplate(template: Omit<InvoiceTemplate, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>) {
+    return this.request('POST', '/templates', template);
+  }
+
+  async updateTemplate(templateId: string, template: Partial<InvoiceTemplate>) {
+    return this.request('PUT', `/templates/${templateId}`, template);
+  }
+
+  async deleteTemplate(templateId: string) {
+    return this.request('DELETE', `/templates/${templateId}`);
+  }
+
+  // Settings operations
+  async getSettings(): Promise<{ data: InvoiceSettings }> {
+    return this.request('GET', '/settings');
+  }
+
+  async updateSettings(settings: Partial<InvoiceSettings>): Promise<{ data: InvoiceSettings }> {
+    return this.request('PUT', '/settings', settings);
+  }
+
+  // Bulk operations
+  async bulkAction(action: BulkInvoiceAction) {
+    return this.request('POST', '/bulk', action);
+  }
+
+  // Export operations
+  async exportInvoices(options: InvoiceExportOptions) {
+    return this.request('POST', '/export', options);
+  }
+
+  // PDF generation
+  async generatePDF(invoiceId: string): Promise<Blob> {
+    const response = await fetch(`${this.baseURL}${this.endpoint}/${invoiceId}/pdf`, {
+      method: 'GET',
+      headers: this.headers,
+    });
+    return response.blob();
+  }
+}
+
+export class MockInvoicesRepository extends MockRepository<Invoice> {
+  protected storageKey = 'ria_invoices';
+  protected endpoint = '/invoices';
+
+  // Mock data generator
+  private generateMockInvoices(): Invoice[] {
+    const statuses: InvoiceStatus[] = ['draft', 'sent', 'viewed', 'partial', 'paid', 'overdue'];
+    const currencies = ['USD', 'EUR', 'GBP'];
+    const clients = [
+      { id: '1', name: 'Acme Corporation', email: 'billing@acme.com' },
+      { id: '2', name: 'TechStart Inc.', email: 'finance@techstart.com' },
+      { id: '3', name: 'Global Solutions Ltd', email: 'accounts@globalsolutions.com' },
+      { id: '4', name: 'Innovation Partners', email: 'billing@innovation.com' },
+      { id: '5', name: 'Digital Dynamics', email: 'payments@digitaldynamics.com' }
+    ];
+
+    const invoices: Invoice[] = [];
+    const now = new Date();
+
+    for (let i = 1; i <= 25; i++) {
+      const client = clients[Math.floor(Math.random() * clients.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const currency = currencies[Math.floor(Math.random() * currencies.length)];
+      const subtotal = Math.round((Math.random() * 10000 + 500) * 100) / 100;
+      const taxRate = Math.round(Math.random() * 15 * 100) / 100;
+      const taxAmount = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+      const total = subtotal + taxAmount;
+      const paidAmount = status === 'paid' ? total : 
+                       status === 'partial' ? Math.round(total * (0.3 + Math.random() * 0.4) * 100) / 100 : 0;
+      
+      const issueDate = new Date(now.getTime() - Math.random() * 90 * 24 * 60 * 60 * 1000);
+      const dueDate = new Date(issueDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      invoices.push({
+        id: `inv_${i.toString().padStart(3, '0')}`,
+        tenantId: 'tenant_1',
+        number: `INV-${new Date().getFullYear()}-${i.toString().padStart(4, '0')}`,
+        clientId: client.id,
+        clientName: client.name,
+        clientEmail: client.email,
+        clientAddress: {
+          name: client.name,
+          line1: `${Math.floor(Math.random() * 9999)} Main Street`,
+          city: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'][Math.floor(Math.random() * 5)],
+          state: 'NY',
+          postalCode: `${Math.floor(Math.random() * 90000) + 10000}`,
+          country: 'US'
+        },
+        issueDate: issueDate.toISOString(),
+        dueDate: dueDate.toISOString(),
+        status,
+        subtotal,
+        taxRate,
+        taxAmount,
+        discountAmount: 0,
+        total,
+        paidAmount,
+        balanceDue: total - paidAmount,
+        currency,
+        description: `Professional services for ${client.name}`,
+        notes: 'Thank you for your business!',
+        terms: 'Payment due within 30 days',
+        footer: 'For questions about this invoice, please contact billing@company.com',
+        sendReminders: true,
+        allowPartialPay: true,
+        requireSignature: false,
+        createdBy: 'user_1',
+        createdAt: issueDate.toISOString(),
+        updatedAt: issueDate.toISOString(),
+        sentAt: status !== 'draft' ? new Date(issueDate.getTime() + Math.random() * 24 * 60 * 60 * 1000).toISOString() : undefined,
+        paidAt: status === 'paid' ? new Date(dueDate.getTime() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString() : undefined
+      });
+    }
+
+    return invoices;
+  }
+
+  private generateMockItems(invoiceId: string): InvoiceItem[] {
+    const serviceTypes = [
+      'Consulting Services', 'Software Development', 'Design Services', 'Project Management',
+      'Technical Support', 'Training Services', 'Maintenance', 'Custom Integration'
+    ];
+
+    const itemCount = Math.floor(Math.random() * 4) + 1;
+    const items: InvoiceItem[] = [];
+
+    for (let i = 0; i < itemCount; i++) {
+      const quantity = Math.floor(Math.random() * 20) + 1;
+      const rate = Math.round((Math.random() * 200 + 50) * 100) / 100;
+      
+      items.push({
+        id: `item_${invoiceId}_${i + 1}`,
+        tenantId: 'tenant_1',
+        invoiceId,
+        name: serviceTypes[Math.floor(Math.random() * serviceTypes.length)],
+        description: 'Professional services as per agreement',
+        quantity,
+        rate,
+        amount: quantity * rate,
+        category: 'Services',
+        sortOrder: i
+      });
+    }
+
+    return items;
+  }
+
+  private generateMockStats(): InvoiceStats {
+    const invoices = this.getStoredData();
+    const totalInvoices = invoices.length;
+    const totalDrafts = invoices.filter(inv => inv.status === 'draft').length;
+    const totalSent = invoices.filter(inv => ['sent', 'viewed', 'partial'].includes(inv.status)).length;
+    const totalPaid = invoices.filter(inv => inv.status === 'paid').length;
+    const totalOverdue = invoices.filter(inv => inv.status === 'overdue').length;
+    
+    const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.total, 0);
+    const totalOutstanding = invoices.filter(inv => !['paid', 'cancelled', 'draft'].includes(inv.status)).reduce((sum, inv) => sum + inv.balanceDue, 0);
+    const totalOverdueAmount = invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + inv.balanceDue, 0);
+
+    return {
+      totalInvoices,
+      totalDrafts,
+      totalSent,
+      totalPaid,
+      totalOverdue,
+      totalRevenue,
+      totalOutstanding,
+      totalOverdueAmount,
+      averageInvoiceValue: totalInvoices > 0 ? totalRevenue / totalPaid : 0,
+      averagePaymentTime: 18, // Mock average of 18 days
+      paymentSuccessRate: totalSent > 0 ? (totalPaid / totalSent) * 100 : 0,
+      recentInvoices: invoices.slice(0, 5),
+      topClients: [
+        { clientName: 'Acme Corporation', totalInvoices: 8, totalAmount: 45000, totalPaid: 42000 },
+        { clientName: 'TechStart Inc.', totalInvoices: 5, totalAmount: 28000, totalPaid: 28000 },
+        { clientName: 'Global Solutions Ltd', totalInvoices: 6, totalAmount: 35000, totalPaid: 31000 }
+      ],
+      monthlyRevenue: [
+        { month: '2024-01', revenue: 35000, invoiceCount: 12 },
+        { month: '2024-02', revenue: 42000, invoiceCount: 15 },
+        { month: '2024-03', revenue: 38000, invoiceCount: 13 }
+      ],
+      statusDistribution: [
+        { status: 'paid', count: totalPaid, totalAmount: totalRevenue },
+        { status: 'sent', count: totalSent, totalAmount: totalOutstanding },
+        { status: 'draft', count: totalDrafts, totalAmount: invoices.filter(inv => inv.status === 'draft').reduce((sum, inv) => sum + inv.total, 0) }
+      ],
+      paymentMethodStats: [
+        { method: 'bank_transfer', count: 15, totalAmount: 65000 },
+        { method: 'credit_card', count: 8, totalAmount: 25000 },
+        { method: 'check', count: 3, totalAmount: 12000 }
+      ]
+    };
+  }
+
+  // Override base methods
+  async findAll(page = 1, limit = 25) {
+    let invoices = this.getStoredData();
+    if (invoices.length === 0) {
+      invoices = this.generateMockInvoices();
+      this.setStoredData(invoices);
+    }
+
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    
+    return {
+      data: invoices.slice(start, end),
+      pagination: {
+        page,
+        limit,
+        total: invoices.length,
+        totalPages: Math.ceil(invoices.length / limit)
+      }
+    };
+  }
+
+  async getInvoices(filters?: InvoiceFilters, sort?: InvoiceSort, page = 1, limit = 25) {
+    let invoices = this.getStoredData();
+    if (invoices.length === 0) {
+      invoices = this.generateMockInvoices();
+      this.setStoredData(invoices);
+    }
+
+    // Apply filters
+    if (filters) {
+      invoices = invoices.filter(invoice => {
+        if (filters.status && !Array.isArray(filters.status) && invoice.status !== filters.status) return false;
+        if (filters.status && Array.isArray(filters.status) && !filters.status.includes(invoice.status)) return false;
+        if (filters.clientId && invoice.clientId !== filters.clientId) return false;
+        if (filters.clientName && !invoice.clientName.toLowerCase().includes(filters.clientName.toLowerCase())) return false;
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          if (!invoice.number.toLowerCase().includes(searchLower) &&
+              !invoice.clientName.toLowerCase().includes(searchLower) &&
+              !invoice.description?.toLowerCase().includes(searchLower)) return false;
+        }
+        return true;
+      });
+    }
+
+    // Apply sorting
+    if (sort) {
+      invoices.sort((a, b) => {
+        const aVal = a[sort.field as keyof Invoice];
+        const bVal = b[sort.field as keyof Invoice];
+        const result = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        return sort.direction === 'desc' ? -result : result;
+      });
+    }
+
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    
+    return {
+      data: invoices.slice(start, end),
+      pagination: {
+        page,
+        limit,
+        total: invoices.length,
+        totalPages: Math.ceil(invoices.length / limit)
+      }
+    };
+  }
+
+  async getInvoiceWithItems(id: string): Promise<{ data: InvoiceWithItems }> {
+    const invoice = await this.findById(id);
+    const items = this.generateMockItems(id);
+    
+    return {
+      data: {
+        ...invoice.data,
+        items
+      }
+    };
+  }
+
+  async getInvoiceWithRelations(id: string): Promise<{ data: InvoiceWithRelations }> {
+    const invoice = await this.findById(id);
+    const items = this.generateMockItems(id);
+    const now = new Date();
+    const dueDate = new Date(invoice.data.dueDate);
+    const isOverdue = now > dueDate && invoice.data.status !== 'paid';
+    const daysPastDue = isOverdue ? Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+    return {
+      data: {
+        ...invoice.data,
+        items,
+        payments: [],
+        activities: [],
+        reminders: [],
+        totalPayments: invoice.data.paidAmount,
+        isOverdue,
+        daysPastDue
+      }
+    };
+  }
+
+  async createInvoice(data: CreateInvoiceData): Promise<{ data: Invoice }> {
+    const invoices = this.getStoredData();
+    const nextNumber = invoices.length + 1;
+    const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+    const taxAmount = subtotal * ((data.taxRate || 0) / 100);
+    const total = subtotal + taxAmount - (data.discountAmount || 0);
+
+    const newInvoice: Invoice = {
+      id: `inv_${Date.now()}`,
+      tenantId: 'tenant_1',
+      number: `INV-${new Date().getFullYear()}-${nextNumber.toString().padStart(4, '0')}`,
+      clientId: data.clientId,
+      clientName: data.clientName,
+      clientEmail: data.clientEmail,
+      clientAddress: data.clientAddress,
+      issueDate: new Date().toISOString(),
+      dueDate: data.dueDate,
+      status: 'draft',
+      subtotal,
+      taxRate: data.taxRate || 0,
+      taxAmount,
+      discountAmount: data.discountAmount || 0,
+      total,
+      paidAmount: 0,
+      balanceDue: total,
+      currency: data.currency || 'USD',
+      description: data.description,
+      notes: data.notes,
+      terms: data.terms,
+      footer: data.footer,
+      sendReminders: data.sendReminders ?? true,
+      allowPartialPay: data.allowPartialPay ?? true,
+      requireSignature: data.requireSignature ?? false,
+      createdBy: 'user_1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    invoices.push(newInvoice);
+    this.setStoredData(invoices);
+    
+    return { data: newInvoice };
+  }
+
+  async sendInvoice(id: string, email?: string): Promise<{ data: Invoice }> {
+    const invoice = await this.findById(id);
+    const updatedInvoice = {
+      ...invoice.data,
+      status: 'sent' as InvoiceStatus,
+      sentAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    return this.update(id, updatedInvoice);
+  }
+
+  async markAsPaid(id: string, paymentData?: CreateInvoicePaymentData): Promise<{ data: Invoice }> {
+    const invoice = await this.findById(id);
+    const updatedInvoice = {
+      ...invoice.data,
+      status: 'paid' as InvoiceStatus,
+      paidAmount: invoice.data.total,
+      balanceDue: 0,
+      paidAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    return this.update(id, updatedInvoice);
+  }
+
+  async getStats(): Promise<{ data: InvoiceStats }> {
+    const invoices = this.getStoredData();
+    if (invoices.length === 0) {
+      const mockInvoices = this.generateMockInvoices();
+      this.setStoredData(mockInvoices);
+    }
+    
+    return { data: this.generateMockStats() };
+  }
+}
+
+// Lazy initialization to prevent bundle bloat
+let _invoicesRepository: MockInvoicesRepository | null = null;
+
+export const invoicesRepository = {
+  get instance(): MockInvoicesRepository {
+    if (!_invoicesRepository) {
+      _invoicesRepository = new MockInvoicesRepository();
+    }
+    return _invoicesRepository;
+  }
+};

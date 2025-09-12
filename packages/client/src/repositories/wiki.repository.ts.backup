@@ -1,0 +1,672 @@
+import { BaseRepository, MockRepository } from './base.repository';
+import type {
+  WikiSpace,
+  WikiPage,
+  WikiRevision,
+  WikiLink,
+  WikiBookmark,
+  WikiSpaceWithPages,
+  WikiPageWithRelations,
+  WikiPageTree,
+  CreateWikiSpaceData,
+  UpdateWikiSpaceData,
+  CreateWikiPageData,
+  UpdateWikiPageData,
+  CreateWikiRevisionData,
+  WikiSpaceFilters,
+  WikiPageFilters,
+  WikiSort,
+  WikiStats,
+  WikiSearchResult,
+  WikiSearchOptions,
+  CreateFromTemplateData
+} from '@ria/wiki-server';
+
+export class WikiRepository extends BaseRepository<WikiSpace> {
+  protected endpoint = '/wiki/spaces';
+
+  // Space management
+  async createSpace(data: CreateWikiSpaceData): Promise<WikiSpace> {
+    return this.request('POST', '/', { body: data });
+  }
+
+  async updateSpace(id: string, data: UpdateWikiSpaceData): Promise<WikiSpace> {
+    return this.request('PUT', `/${id}`, { body: data });
+  }
+
+  async deleteSpace(id: string): Promise<void> {
+    await this.request('DELETE', `/${id}`);
+  }
+
+  async getSpaceWithPages(id: string): Promise<WikiSpaceWithPages> {
+    return this.request('GET', `/${id}/with-pages`);
+  }
+
+  async getSpaceTree(id: string): Promise<WikiPageTree[]> {
+    return this.request('GET', `/${id}/tree`);
+  }
+
+  // Page management
+  async getPage(spaceId: string, pageId: string): Promise<WikiPageWithRelations> {
+    return this.request('GET', `/${spaceId}/pages/${pageId}`);
+  }
+
+  async createPage(data: CreateWikiPageData): Promise<WikiPage> {
+    return this.request('POST', `/${data.spaceId}/pages`, { body: data });
+  }
+
+  async updatePage(spaceId: string, pageId: string, data: UpdateWikiPageData): Promise<WikiPage> {
+    return this.request('PUT', `/${spaceId}/pages/${pageId}`, { body: data });
+  }
+
+  async deletePage(spaceId: string, pageId: string): Promise<void> {
+    await this.request('DELETE', `/${spaceId}/pages/${pageId}`);
+  }
+
+  async publishPage(spaceId: string, pageId: string): Promise<WikiPage> {
+    return this.request('POST', `/${spaceId}/pages/${pageId}/publish`);
+  }
+
+  async archivePage(spaceId: string, pageId: string): Promise<WikiPage> {
+    return this.request('POST', `/${spaceId}/pages/${pageId}/archive`);
+  }
+
+  // Revision management
+  async getPageRevisions(spaceId: string, pageId: string): Promise<WikiRevision[]> {
+    return this.request('GET', `/${spaceId}/pages/${pageId}/revisions`);
+  }
+
+  async createRevision(spaceId: string, data: CreateWikiRevisionData): Promise<WikiRevision> {
+    return this.request('POST', `/${spaceId}/pages/${data.pageId}/revisions`, { body: data });
+  }
+
+  async restoreRevision(spaceId: string, pageId: string, revisionId: string): Promise<WikiPage> {
+    return this.request('POST', `/${spaceId}/pages/${pageId}/revisions/${revisionId}/restore`);
+  }
+
+  // Search and filtering
+  async searchWiki(options: WikiSearchOptions): Promise<WikiSearchResult[]> {
+    return this.request('POST', '/search', { body: options });
+  }
+
+  async getFilteredSpaces(filters: WikiSpaceFilters, sort: WikiSort[], page: number = 1, limit: number = 20) {
+    return this.findFiltered(filters, sort, page, limit);
+  }
+
+  async getFilteredPages(filters: WikiPageFilters, sort: WikiSort[], page: number = 1, limit: number = 20) {
+    return this.request('POST', '/pages/search', {
+      body: { filters, sort, page, limit }
+    });
+  }
+
+  // Templates
+  async getTemplates(spaceId?: string): Promise<WikiPage[]> {
+    const endpoint = spaceId ? `/${spaceId}/templates` : '/templates';
+    return this.request('GET', endpoint);
+  }
+
+  async createFromTemplate(data: CreateFromTemplateData): Promise<WikiPage> {
+    return this.request('POST', '/templates/create', { body: data });
+  }
+
+  // Bookmarks
+  async getBookmarks(): Promise<WikiBookmark[]> {
+    return this.request('GET', '/bookmarks');
+  }
+
+  async bookmarkPage(pageId: string): Promise<WikiBookmark> {
+    return this.request('POST', '/bookmarks', { body: { pageId } });
+  }
+
+  async removeBookmark(pageId: string): Promise<void> {
+    await this.request('DELETE', `/bookmarks/${pageId}`);
+  }
+
+  // Analytics
+  async getStats(): Promise<WikiStats> {
+    return this.request('GET', '/stats');
+  }
+}
+
+export class MockWikiRepository extends MockRepository<WikiSpace> {
+  protected storageKey = 'ria_wiki_spaces';
+  protected endpoint = '/wiki/spaces';
+
+  private mockSpaces: WikiSpace[] = [
+    {
+      id: 'space-1',
+      tenantId: 'tenant-1',
+      name: 'Company Knowledge Base',
+      description: 'Central repository for company policies, procedures, and documentation',
+      slug: 'company-kb',
+      isPublic: true,
+      icon: '📚',
+      color: '#3B82F6',
+      sortOrder: 0,
+      createdBy: 'user-1',
+      createdAt: '2024-01-15T09:00:00Z',
+      updatedAt: '2024-09-10T14:30:00Z'
+    },
+    {
+      id: 'space-2',
+      tenantId: 'tenant-1',
+      name: 'Product Documentation',
+      description: 'Technical documentation for our products and services',
+      slug: 'product-docs',
+      isPublic: false,
+      icon: '🔧',
+      color: '#10B981',
+      sortOrder: 1,
+      createdBy: 'user-2',
+      createdAt: '2024-02-01T10:00:00Z',
+      updatedAt: '2024-09-08T16:45:00Z'
+    },
+    {
+      id: 'space-3',
+      tenantId: 'tenant-1',
+      name: 'Team Playbooks',
+      description: 'Best practices and playbooks for different teams',
+      slug: 'team-playbooks',
+      isPublic: false,
+      icon: '📋',
+      color: '#F59E0B',
+      sortOrder: 2,
+      createdBy: 'user-3',
+      createdAt: '2024-03-01T11:00:00Z',
+      updatedAt: '2024-09-05T12:15:00Z'
+    }
+  ];
+
+  private mockPages: WikiPage[] = [
+    {
+      id: 'page-1',
+      tenantId: 'tenant-1',
+      spaceId: 'space-1',
+      parentId: undefined,
+      title: 'Welcome to Our Knowledge Base',
+      slug: 'welcome',
+      content: `# Welcome to Our Knowledge Base
+
+This is the central hub for all company knowledge, policies, and procedures. Here you'll find:
+
+## Getting Started
+- [Employee Handbook](./employee-handbook)
+- [Company Policies](./policies)
+- [IT Setup Guide](./it-setup)
+
+## Resources
+- [Templates](./templates)
+- [FAQs](./faqs)
+- [Contact Information](./contacts)
+
+Feel free to contribute and keep our knowledge base up to date!`,
+      excerpt: 'Central hub for company knowledge and resources',
+      status: 'published',
+      isTemplate: false,
+      tags: ['welcome', 'getting-started'],
+      version: 3,
+      publishedAt: '2024-01-15T09:30:00Z',
+      createdBy: 'user-1',
+      createdAt: '2024-01-15T09:00:00Z',
+      updatedAt: '2024-09-01T10:00:00Z'
+    },
+    {
+      id: 'page-2',
+      tenantId: 'tenant-1',
+      spaceId: 'space-1',
+      parentId: 'page-1',
+      title: 'Employee Handbook',
+      slug: 'employee-handbook',
+      content: `# Employee Handbook
+
+## Company Culture
+Our company values collaboration, innovation, and continuous learning.
+
+## Working Hours
+- Standard hours: 9 AM - 5 PM
+- Flexible working arrangements available
+- Remote work policies
+
+## Benefits
+- Health insurance
+- 401(k) matching
+- Professional development budget
+- Unlimited PTO`,
+      excerpt: 'Complete guide for new and existing employees',
+      status: 'published',
+      isTemplate: false,
+      tags: ['hr', 'onboarding', 'policies'],
+      version: 2,
+      publishedAt: '2024-01-20T14:00:00Z',
+      createdBy: 'user-1',
+      createdAt: '2024-01-20T13:30:00Z',
+      updatedAt: '2024-08-15T09:00:00Z'
+    },
+    {
+      id: 'page-3',
+      tenantId: 'tenant-1',
+      spaceId: 'space-2',
+      parentId: undefined,
+      title: 'API Documentation',
+      slug: 'api-docs',
+      content: `# API Documentation
+
+## Authentication
+All API requests require authentication using Bearer tokens.
+
+## Endpoints
+
+### Users
+- GET /api/users - List users
+- POST /api/users - Create user
+- PUT /api/users/:id - Update user
+
+### Projects
+- GET /api/projects - List projects
+- POST /api/projects - Create project
+
+## Rate Limiting
+API calls are limited to 1000 requests per hour per token.`,
+      excerpt: 'Complete API reference and integration guide',
+      status: 'published',
+      isTemplate: false,
+      tags: ['api', 'technical', 'integration'],
+      version: 5,
+      publishedAt: '2024-02-01T11:00:00Z',
+      createdBy: 'user-2',
+      createdAt: '2024-02-01T10:30:00Z',
+      updatedAt: '2024-09-08T16:45:00Z'
+    },
+    {
+      id: 'page-4',
+      tenantId: 'tenant-1',
+      spaceId: 'space-3',
+      parentId: undefined,
+      title: 'Sales Process Template',
+      slug: 'sales-process',
+      content: `# Sales Process Playbook
+
+## Lead Qualification
+1. Initial contact within 24 hours
+2. Needs assessment call
+3. Demo scheduling
+4. Proposal creation
+
+## Follow-up Schedule
+- Day 1: Thank you email
+- Day 3: Value proposition recap
+- Day 7: Check-in call
+- Day 14: Final follow-up
+
+## Tools and Resources
+- CRM: Salesforce
+- Email templates: ./templates/sales
+- Pricing sheets: ./resources/pricing`,
+      excerpt: 'Step-by-step guide for sales team processes',
+      status: 'draft',
+      isTemplate: true,
+      tags: ['sales', 'process', 'template'],
+      version: 1,
+      createdBy: 'user-3',
+      createdAt: '2024-03-15T14:00:00Z',
+      updatedAt: '2024-03-15T14:00:00Z'
+    }
+  ];
+
+  private mockRevisions: WikiRevision[] = [
+    {
+      id: 'rev-1',
+      tenantId: 'tenant-1',
+      pageId: 'page-1',
+      version: 1,
+      title: 'Welcome to Our Knowledge Base',
+      content: '# Welcome\n\nBasic welcome message.',
+      changeNote: 'Initial version',
+      createdBy: 'user-1',
+      createdAt: '2024-01-15T09:00:00Z'
+    },
+    {
+      id: 'rev-2',
+      tenantId: 'tenant-1',
+      pageId: 'page-1',
+      version: 2,
+      title: 'Welcome to Our Knowledge Base',
+      content: '# Welcome\n\nExpanded welcome with basic links.',
+      changeNote: 'Added navigation links',
+      createdBy: 'user-1',
+      createdAt: '2024-01-15T09:15:00Z'
+    }
+  ];
+
+  private mockBookmarks: WikiBookmark[] = [
+    {
+      id: 'bookmark-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      pageId: 'page-2',
+      createdAt: '2024-08-01T10:00:00Z'
+    },
+    {
+      id: 'bookmark-2',
+      tenantId: 'tenant-1',
+      userId: 'user-2',
+      pageId: 'page-3',
+      createdAt: '2024-08-15T14:30:00Z'
+    }
+  ];
+
+  constructor() {
+    super();
+    this.loadMockData();
+  }
+
+  private loadMockData() {
+    // Initialize mock data if not exists
+    if (!this.getData().length) {
+      this.storage.setItem(this.storageKey, JSON.stringify(this.mockSpaces));
+    }
+  }
+
+  async createSpace(data: CreateWikiSpaceData): Promise<WikiSpace> {
+    const space: WikiSpace = {
+      id: this.generateId(),
+      tenantId: this.defaultTenantId,
+      createdBy: this.defaultUserId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sortOrder: 0,
+      isPublic: false,
+      ...data
+    };
+
+    const spaces = this.getData();
+    spaces.push(space);
+    this.storage.setItem(this.storageKey, JSON.stringify(spaces));
+    return space;
+  }
+
+  async updateSpace(id: string, data: UpdateWikiSpaceData): Promise<WikiSpace> {
+    const spaces = this.getData();
+    const index = spaces.findIndex(s => s.id === id);
+    if (index === -1) throw new Error('Space not found');
+
+    spaces[index] = {
+      ...spaces[index],
+      ...data,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.storage.setItem(this.storageKey, JSON.stringify(spaces));
+    return spaces[index];
+  }
+
+  async deleteSpace(id: string): Promise<void> {
+    const spaces = this.getData();
+    const filtered = spaces.filter(s => s.id !== id);
+    this.storage.setItem(this.storageKey, JSON.stringify(filtered));
+  }
+
+  async getSpaceWithPages(id: string): Promise<WikiSpaceWithPages> {
+    const space = this.getData().find(s => s.id === id);
+    if (!space) throw new Error('Space not found');
+
+    const pages = this.mockPages.filter(p => p.spaceId === id);
+    return {
+      ...space,
+      pages,
+      pageCount: pages.length
+    };
+  }
+
+  async getSpaceTree(id: string): Promise<WikiPageTree[]> {
+    const pages = this.mockPages.filter(p => p.spaceId === id);
+    return this.buildPageTree(pages);
+  }
+
+  private buildPageTree(pages: WikiPage[], parentId?: string, level: number = 0): WikiPageTree[] {
+    return pages
+      .filter(p => p.parentId === parentId)
+      .map(page => ({
+        ...page,
+        level,
+        children: this.buildPageTree(pages, page.id, level + 1)
+      }));
+  }
+
+  async getPage(spaceId: string, pageId: string): Promise<WikiPageWithRelations> {
+    const page = this.mockPages.find(p => p.spaceId === spaceId && p.id === pageId);
+    if (!page) throw new Error('Page not found');
+
+    const space = this.getData().find(s => s.id === spaceId)!;
+    const parent = page.parentId ? this.mockPages.find(p => p.id === page.parentId) : undefined;
+    const children = this.mockPages.filter(p => p.parentId === pageId);
+    const template = page.templateId ? this.mockPages.find(p => p.id === page.templateId) : undefined;
+    const revisions = this.mockRevisions.filter(r => r.pageId === pageId);
+    const backlinks = this.mockPages.filter(p => 
+      p.content?.includes(`[${page.title}]`) || p.content?.includes(`(${page.slug})`)
+    ).map(p => ({
+      id: `link-${p.id}-${pageId}`,
+      tenantId: page.tenantId,
+      fromPageId: p.id,
+      toPageId: pageId,
+      linkText: page.title,
+      linkType: 'internal' as const,
+      createdAt: p.updatedAt
+    }));
+
+    const bookmarkCount = this.mockBookmarks.filter(b => b.pageId === pageId).length;
+
+    return {
+      ...page,
+      space,
+      parent,
+      children,
+      template,
+      revisions,
+      backlinks,
+      bookmarkCount
+    };
+  }
+
+  async createPage(data: CreateWikiPageData): Promise<WikiPage> {
+    const page: WikiPage = {
+      id: this.generateId(),
+      tenantId: this.defaultTenantId,
+      createdBy: this.defaultUserId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'draft',
+      isTemplate: false,
+      tags: [],
+      version: 1,
+      ...data
+    };
+
+    this.mockPages.push(page);
+    return page;
+  }
+
+  async updatePage(spaceId: string, pageId: string, data: UpdateWikiPageData): Promise<WikiPage> {
+    const index = this.mockPages.findIndex(p => p.spaceId === spaceId && p.id === pageId);
+    if (index === -1) throw new Error('Page not found');
+
+    // Create revision if content changed
+    if (data.content && data.content !== this.mockPages[index].content) {
+      const revision: WikiRevision = {
+        id: this.generateId(),
+        tenantId: this.defaultTenantId,
+        pageId: pageId,
+        version: this.mockPages[index].version + 1,
+        title: data.title || this.mockPages[index].title,
+        content: data.content,
+        excerpt: data.excerpt,
+        changeNote: data.changeNote,
+        createdBy: this.defaultUserId,
+        createdAt: new Date().toISOString()
+      };
+      this.mockRevisions.push(revision);
+    }
+
+    this.mockPages[index] = {
+      ...this.mockPages[index],
+      ...data,
+      version: data.content ? this.mockPages[index].version + 1 : this.mockPages[index].version,
+      updatedAt: new Date().toISOString()
+    };
+
+    return this.mockPages[index];
+  }
+
+  async deletePage(spaceId: string, pageId: string): Promise<void> {
+    this.mockPages = this.mockPages.filter(p => !(p.spaceId === spaceId && p.id === pageId));
+  }
+
+  async publishPage(spaceId: string, pageId: string): Promise<WikiPage> {
+    return this.updatePage(spaceId, pageId, { 
+      status: 'published', 
+      publishedAt: new Date().toISOString() 
+    });
+  }
+
+  async archivePage(spaceId: string, pageId: string): Promise<WikiPage> {
+    return this.updatePage(spaceId, pageId, { status: 'archived' });
+  }
+
+  async getPageRevisions(spaceId: string, pageId: string): Promise<WikiRevision[]> {
+    return this.mockRevisions.filter(r => r.pageId === pageId).sort((a, b) => b.version - a.version);
+  }
+
+  async searchWiki(options: WikiSearchOptions): Promise<WikiSearchResult[]> {
+    const { query, spaceIds, pageStatuses, tags, limit = 10 } = options;
+    const results: WikiSearchResult[] = [];
+
+    // Search spaces
+    const spaces = this.getData().filter(space => {
+      if (!space.name.toLowerCase().includes(query.toLowerCase()) && 
+          !space.description?.toLowerCase().includes(query.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
+
+    spaces.forEach(space => {
+      results.push({
+        type: 'space',
+        id: space.id,
+        title: space.name,
+        excerpt: space.description,
+        highlights: [space.name],
+        relevanceScore: space.name.toLowerCase().includes(query.toLowerCase()) ? 1.0 : 0.8,
+        breadcrumb: [space.name],
+        lastUpdated: space.updatedAt
+      });
+    });
+
+    // Search pages
+    const pages = this.mockPages.filter(page => {
+      if (spaceIds && !spaceIds.includes(page.spaceId)) return false;
+      if (pageStatuses && !pageStatuses.includes(page.status)) return false;
+      if (tags && !tags.some(tag => page.tags.includes(tag))) return false;
+      
+      return page.title.toLowerCase().includes(query.toLowerCase()) ||
+             page.content?.toLowerCase().includes(query.toLowerCase()) ||
+             page.excerpt?.toLowerCase().includes(query.toLowerCase());
+    });
+
+    pages.forEach(page => {
+      const space = this.getData().find(s => s.id === page.spaceId);
+      results.push({
+        type: 'page',
+        id: page.id,
+        title: page.title,
+        excerpt: page.excerpt,
+        highlights: [page.title],
+        relevanceScore: page.title.toLowerCase().includes(query.toLowerCase()) ? 1.0 : 0.6,
+        breadcrumb: [space?.name || '', page.title],
+        lastUpdated: page.updatedAt
+      });
+    });
+
+    return results
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, limit);
+  }
+
+  async getTemplates(spaceId?: string): Promise<WikiPage[]> {
+    return this.mockPages.filter(p => {
+      if (!p.isTemplate) return false;
+      if (spaceId && p.spaceId !== spaceId) return false;
+      return true;
+    });
+  }
+
+  async createFromTemplate(data: CreateFromTemplateData): Promise<WikiPage> {
+    const template = this.mockPages.find(p => p.id === data.templateId);
+    if (!template) throw new Error('Template not found');
+
+    // Process template content with variables
+    let content = template.content || '';
+    Object.entries(data.variables).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      content = content.replace(regex, String(value));
+    });
+
+    return this.createPage({
+      ...data,
+      content,
+      templateId: data.templateId,
+      isTemplate: false,
+      status: 'draft'
+    });
+  }
+
+  async getBookmarks(): Promise<WikiBookmark[]> {
+    return this.mockBookmarks.filter(b => b.tenantId === this.defaultTenantId);
+  }
+
+  async bookmarkPage(pageId: string): Promise<WikiBookmark> {
+    const bookmark: WikiBookmark = {
+      id: this.generateId(),
+      tenantId: this.defaultTenantId,
+      userId: this.defaultUserId,
+      pageId,
+      createdAt: new Date().toISOString()
+    };
+
+    this.mockBookmarks.push(bookmark);
+    return bookmark;
+  }
+
+  async removeBookmark(pageId: string): Promise<void> {
+    this.mockBookmarks = this.mockBookmarks.filter(
+      b => !(b.pageId === pageId && b.userId === this.defaultUserId)
+    );
+  }
+
+  async getStats(): Promise<WikiStats> {
+    const spaces = this.getData();
+    const pages = this.mockPages;
+    
+    return {
+      totalSpaces: spaces.length,
+      totalPages: pages.length,
+      publishedPages: pages.filter(p => p.status === 'published').length,
+      draftPages: pages.filter(p => p.status === 'draft').length,
+      archivedPages: pages.filter(p => p.status === 'archived').length,
+      totalRevisions: this.mockRevisions.length,
+      recentlyUpdated: pages
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 5),
+      popularPages: pages
+        .map(page => ({ ...page, viewCount: Math.floor(Math.random() * 100) + 10 }))
+        .sort((a, b) => b.viewCount - a.viewCount)
+        .slice(0, 5),
+      topContributors: [
+        { userId: 'user-1', pageCount: 2, revisionCount: 3 },
+        { userId: 'user-2', pageCount: 1, revisionCount: 5 },
+        { userId: 'user-3', pageCount: 1, revisionCount: 1 }
+      ]
+    };
+  }
+}
+
