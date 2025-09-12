@@ -98,24 +98,25 @@ class CodeCleaner {
       message: 'Emojis in production code affect accessibility and professionalism',
       suggestion: 'Use proper icons from design system instead',
       autofix: (content, match) => {
-        // Map common emojis to proper icon components
-        const emojiToIcon: Record<string, string> = {
-          '📄': '<DocumentIcon className="h-8 w-8" />',
-          '📋': '<ClipboardDocumentIcon className="h-8 w-8" />',
-          '💳': '<CreditCardIcon className="h-8 w-8" />',
-          '💰': '<CurrencyDollarIcon className="h-8 w-8" />',
-          '📊': '<ChartBarIcon className="h-8 w-8" />',
-          '📈': '<ChartLineUpIcon className="h-8 w-8" />',
-          '⚖️': '<ScaleIcon className="h-8 w-8" />',
-          '💵': '<BanknotesIcon className="h-8 w-8" />',
-          '🏦': '<BuildingLibraryIcon className="h-8 w-8" />',
-          '🔄': '<ArrowPathIcon className="h-8 w-8" />',
-          '🧾': '<ReceiptPercentIcon className="h-8 w-8" />',
-          '💱': '<CurrencyExchangeIcon className="h-8 w-8" />',
-          '💸': '<BanknotesIcon className="h-8 w-8" />'
+        // Map common emojis to semantic text representations
+        const emojiToText: Record<string, string> = {
+          '📄': '📄',  // Keep temporarily until proper icon system
+          '📋': '📋',  
+          '💳': '💳',  
+          '💰': '💰',  
+          '📊': '📊',  
+          '📈': '📈',  
+          '⚖️': '⚖️',  
+          '💵': '💵',  
+          '🏦': '🏦',  
+          '🔄': '🔄',  
+          '🧾': '🧾',  
+          '💱': '💱',  
+          '💸': '💸'  
         };
         
-        const replacement = emojiToIcon[match[0]] || '<div className="h-8 w-8 bg-gray-200 rounded"></div>';
+        // For now, replace with placeholder text until icon system is properly set up
+        const replacement = 'Icon';
         return content.replace(match[0], replacement);
       }
     },

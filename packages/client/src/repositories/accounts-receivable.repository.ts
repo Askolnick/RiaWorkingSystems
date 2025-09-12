@@ -325,7 +325,10 @@ export class MockAccountsReceivableRepository extends MockRepository<ARInvoice> 
 
   constructor() {
     super();
-    this.initializeMockData();
+    // Skip initialization during SSR
+    if (typeof window !== 'undefined') {
+      this.initializeMockData();
+    }
   }
 
   private initializeMockData(): void {

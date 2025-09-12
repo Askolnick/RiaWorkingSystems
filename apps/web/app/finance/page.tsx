@@ -47,25 +47,25 @@ export default function FinancePage() {
   const quickActions: { name: string; href: string; icon: string; description: string }[] = [
     // { 
     //   name: 'Create Invoice', 
-    //   href: `/finance/invoices/new`, 
+    //   href: ROUTES._FINANCE_INVOICES_NEW, 
     //   icon: '📄', 
     //   description: 'Generate new client invoice' 
     // },
     // { 
     //   name: 'Record Expense', 
-    //   href: `/finance/expenses/new`, 
+    //   href: ROUTES._FINANCE_EXPENSES_NEW, 
     //   icon: '💳', 
     //   description: 'Log business expense' 
     // },
     // { 
     //   name: 'Pay Bills', 
-    //   href: '/finance/bills', 
-    //   icon: '💸', 
+    //   href: ROUTES._FINANCE_BILLS, 
+    //   icon: '💵', 
     //   description: 'Manage outstanding bills' 
     // },
     // { 
     //   name: 'View Reports', 
-    //   href: '/finance/reports', 
+    //   href: ROUTES._FINANCE_REPORTS, 
     //   icon: '📊', 
     //   description: 'Financial statements' 
     // },
@@ -132,7 +132,7 @@ export default function FinancePage() {
 {/* TODO: Uncomment when invoices module is implemented
                 <Button 
                   size="sm"
-                  onClick={() => router.push('/finance/invoices/new')}
+                  onClick={() => router.push(ROUTES._FINANCE_INVOICES_NEW)}
                 >
                   New Invoice
                 </Button>
@@ -341,7 +341,7 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href="/finance/accounts-receivable">
+              <Link href={ROUTES.FINANCE_ACCOUNTS_RECEIVABLE}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">
@@ -367,7 +367,7 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href="/finance/income-statement">
+              <Link href={ROUTES.FINANCE_INCOME_STATEMENT}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">
@@ -378,7 +378,7 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href="/finance/balance-sheet">
+              <Link href={ROUTES.FINANCE_BALANCE_SHEET}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">
@@ -389,7 +389,7 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href="/finance/cash-flow">
+              <Link href={ROUTES.FINANCE_CASH_FLOW}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">
@@ -415,7 +415,7 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href="/finance/recurring-transactions">
+              <Link href={ROUTES.FINANCE_RECURRING_TRANSACTIONS}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">
@@ -426,7 +426,7 @@ export default function FinancePage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href="/finance/receipt-manager">
+              <Link href={ROUTES.FINANCE_RECEIPT_MANAGER}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-200">
                   <CardContent className="p-6">
                     <div className="text-center">

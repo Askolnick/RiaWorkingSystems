@@ -135,7 +135,10 @@ export class ReceiptManagerRepository extends MockRepository<Receipt> {
   
   constructor() {
     super();
-    this.initializeMockData();
+    // Skip initialization during SSR
+    if (typeof window !== 'undefined') {
+      this.initializeMockData();
+    }
   }
   
   private initializeMockData() {
