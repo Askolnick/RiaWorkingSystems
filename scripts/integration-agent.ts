@@ -489,19 +489,36 @@ class IntegrationAgent {
 
   private determineTargetPath(sourceFile: string, module: IntegrationModule): string {
     // Smart path mapping based on file structure and module type
-    if (sourceFile.includes('components/')) {
-      return path.join('packages/web-ui/src/', sourceFile);
+    
+    // For email module: src/email/* -> packages/email-client/src/*
+    if (module.name === 'email-module-dropin-2025-09-12' && sourceFile.startsWith('src/email/')) {
+      const relativePath = sourceFile.replace('src/email/', '');
+      return path.join('packages/email-client/src/', relativePath);
     }
     
-    if (sourceFile.includes('app/')) {
-      return path.join('apps/web/', sourceFile);
+    // For components, put in web-ui
+    if (sourceFile.includes('components/') && !sourceFile.includes('app/')) {
+      const relativePath = sourceFile.substring(sourceFile.indexOf('components/'));
+      return path.join('packages/web-ui/src/', relativePath);
     }
     
-    if (sourceFile.includes('src/')) {
-      return path.join('packages/', `${module.name}-client/`, sourceFile);
+    // For app routes/pages, put in apps/web
+    if (sourceFile.includes('app/') || sourceFile.includes('pages/')) {
+      const relativePath = sourceFile.substring(sourceFile.indexOf('app/') || sourceFile.indexOf('pages/'));
+      return path.join('apps/web/', relativePath);
     }
     
-    return path.join('packages/', `${module.name}/`, sourceFile);
+    // For API files, put in apps/api
+    if (sourceFile.includes('api/') || sourceFile.includes('controllers/') || sourceFile.includes('services/')) {
+      const relativePath = sourceFile.includes('apps/api/') 
+        ? sourceFile.substring(sourceFile.indexOf('apps/api/') + 9)
+        : sourceFile;
+      return path.join('apps/api/src/', relativePath);
+    }
+    
+    // Default: create a package for the module
+    const packageName = module.name.replace('-dropin-2025-09-12', '').replace('ria-', '');
+    return path.join('packages', `${packageName}-client/src/`, sourceFile);
   }
 
   private checkFileConflicts(targetPath: string): string[] {
