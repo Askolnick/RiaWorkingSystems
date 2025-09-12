@@ -29,25 +29,13 @@ import {
   Input, 
   Select 
 } from '@ria/web-ui';
-import { ROUTES } from '@ria/utils';
-// Types - will be imported from @ria/accounts-receivable-server when available
-interface CustomerAccount {
-  id: string;
-  name: string;
-  email: string;
-  creditLimit: number;
-  currentBalance: number;
-  overdueBalance: number;
-}
+import { CustomerAccount, ARInvoice, AgingBucket } from './utils/types';
+import { formatCurrency, formatDate, getDaysOverdue, getStatusBadgeVariant, handleExportAgingReport } from './utils/utilities';
 
-interface ARInvoice {
-  id: string;
-  customerId: string;
-  number: string;
-  amount: number;
-  dueDate: string;
-  status: string;
-}
+import { ROUTES } from '@ria/utils';
+
+
+
 
 interface ARPayment {
   id: string;
@@ -71,12 +59,7 @@ interface AgingReport {
   totalOutstanding: number;
 }
 
-interface AgingBucket {
-  label: string;
-  amount: number;
-  count: number;
-  percentage: number;
-}
+
 
 export default function AccountsReceivablePage() : void {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
