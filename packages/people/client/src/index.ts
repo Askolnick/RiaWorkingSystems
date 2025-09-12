@@ -1,1 +1,1 @@
-// people client exports
+export * from './types';
