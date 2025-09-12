@@ -1,13 +1,8 @@
-// REFACTOR SUGGESTION: Consider extracting the following utilities:
-// - getStatusBadgeVariant (utility, 59 lines)
-// - formatCurrency (utility, 18 lines)
-// - formatDate (utility, 10 lines)
-// - getDaysOverdue (utility, 11 lines)
-// - handleExportAgingReport (utility, 20 lines)
-// - types (type, 41 lines)
-
-// Original file preserved to prevent breaking changes
-
+// TODO: Replace appropriate JSX sections with <PaymentForm />
+// TODO: Replace appropriate JSX sections with <CustomerForm />
+// TODO: Replace appropriate JSX sections with <PaymentModal />
+// TODO: Replace appropriate JSX sections with <CustomerModal />
+// TODO: Replace appropriate JSX sections with <PageHeader />
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -33,6 +28,18 @@ import { CustomerAccount, ARInvoice, AgingBucket } from './utils/types';
 import { formatCurrency, formatDate, getDaysOverdue, getStatusBadgeVariant, handleExportAgingReport } from './utils/utilities';
 
 import { ROUTES } from '@ria/utils';
+import { PageHeader } from './components/PageHeader';
+import { CustomerModal } from './components/CustomerModal';
+import { PaymentModal } from './components/PaymentModal';
+import { CustomerForm } from './components/CustomerForm';
+import { PaymentForm } from './components/PaymentForm';
+import { getStatusBadgeVariant } from './components/getStatusBadgeVariant';
+import { formatCurrency } from './components/formatCurrency';
+import { formatDate } from './components/formatDate';
+import { getDaysOverdue } from './components/getDaysOverdue';
+import { handleExportAgingReport } from './components/handleExportAgingReport';
+import { types } from './components/types';
+
 
 
 

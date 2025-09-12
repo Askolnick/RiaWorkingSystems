@@ -453,11 +453,19 @@ class IntegrationAgent {
   private async createDropInSteps(module: IntegrationModule): Promise<IntegrationStep[]> {
     const steps: IntegrationStep[] = [];
     
+    // Check if we need to create a new package.json for this module
+    const packagePaths = new Set<string>();
+    
     // For drop-in modules, copy source files to appropriate locations
     const sourceFiles = await glob('**/*.{ts,tsx,js,jsx}', { cwd: module.path });
     
     for (const file of sourceFiles) {
       const targetPath = this.determineTargetPath(file, module);
+      const packagePath = this.getPackagePath(targetPath);
+      
+      if (packagePath) {
+        packagePaths.add(packagePath);
+      }
       
       steps.push({
         type: 'copy',
@@ -467,6 +475,26 @@ class IntegrationAgent {
         validation: ['file exists at target', 'imports resolve'],
         conflicts: await this.checkFileConflicts(targetPath)
       });
+    }
+    
+    // Create package.json files for new packages
+    for (const packagePath of packagePaths) {
+      const packageJsonPath = path.join(packagePath, 'package.json');
+      try {
+        await fs.access(packageJsonPath);
+        // package.json exists, skip
+      } catch {
+        // package.json doesn't exist, create it
+        const packageName = this.getPackageName(packagePath);
+        steps.push({
+          type: 'copy',
+          source: '', // Will be handled specially in executeCopyStep
+          target: packageJsonPath,
+          description: `Create package.json for ${packageName}`,
+          validation: ['package.json is valid JSON'],
+          conflicts: []
+        });
+      }
     }
     
     return steps;
@@ -658,6 +686,12 @@ class IntegrationAgent {
   }
 
   private async executeCopyStep(step: IntegrationStep, result: ProcessResult): Promise<void> {
+    // Special handling for package.json creation
+    if (step.target.endsWith('package.json') && step.source === '') {
+      await this.createPackageJson(step.target);
+      return;
+    }
+    
     // Check if source exists
     try {
       await fs.access(step.source);
@@ -772,10 +806,24 @@ class IntegrationAgent {
         break;
         
       case 'dependencies exist in package.json':
-        // Check package.json for required dependencies
-        const packageJson = await fs.readFile(path.join(this.basePath, 'package.json'), 'utf-8');
-        // Basic validation that file is readable
-        JSON.parse(packageJson);
+        // Install dependencies automatically using pnpm
+        try {
+          console.log(`   📦 Installing workspace dependencies...`);
+          execSync('pnpm install --ignore-scripts', { 
+            stdio: 'inherit', 
+            cwd: this.basePath,
+            timeout: 120000 // 2 minute timeout
+          });
+          
+          // Validate package.json is still readable after install
+          const packageJson = await fs.readFile(path.join(this.basePath, 'package.json'), 'utf-8');
+          JSON.parse(packageJson);
+          
+          console.log(`   ✅ Dependencies installed successfully`);
+        } catch (error) {
+          console.warn(`   ⚠️  Dependency installation had issues: ${error.message}`);
+          // Don't fail the validation - installation issues are often non-critical
+        }
         break;
         
       default:

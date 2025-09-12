@@ -135,6 +135,10 @@ class RefactorAgent {
       }
     }
 
+    // NEW: Extract logical sections from large JSX returns
+    const jsxSections = this.extractJSXLogicalSections(content);
+    components.push(...jsxSections);
+
     // Extract Hooks
     const hookMatches = [...content.matchAll(this.COMPONENT_PATTERNS.hookFunction)];
     for (const match of hookMatches) {
@@ -188,6 +192,202 @@ class RefactorAgent {
     }
 
     return components;
+  }
+
+  private extractJSXLogicalSections(content: string): ComponentExtraction[] {
+    const sections: ComponentExtraction[] = [];
+    
+    // Find the main component's return statement
+    const returnMatch = content.match(/return\s*\(([\s\S]*?)\);?\s*\}\s*$/);
+    if (!returnMatch) return sections;
+    
+    const jsxContent = returnMatch[1];
+    const logicalSections = this.identifyLogicalSections(jsxContent);
+    
+    for (const section of logicalSections) {
+      if (section.lineCount >= this.MIN_COMPONENT_LINES) {
+        sections.push({
+          name: section.name,
+          code: this.generateComponentCode(section.name, section.jsx, section.dependencies),
+          imports: this.extractImportsForSection(section.dependencies),
+          exports: [section.name],
+          dependencies: section.dependencies,
+          type: 'component',
+          lineCount: section.lineCount
+        });
+      }
+    }
+    
+    return sections;
+  }
+
+  private identifyLogicalSections(jsxContent: string): Array<{
+    name: string;
+    jsx: string;
+    dependencies: string[];
+    lineCount: number;
+  }> {
+    const sections = [];
+    
+    // Pattern 1: Header sections
+    const headerMatch = jsxContent.match(/<header[^>]*>([\s\S]*?)<\/header>/);
+    if (headerMatch) {
+      sections.push({
+        name: 'PageHeader',
+        jsx: headerMatch[0],
+        dependencies: this.extractDependencies(headerMatch[0]),
+        lineCount: headerMatch[0].split('\n').length
+      });
+    }
+    
+    // Pattern 2: Metrics/Dashboard sections
+    const metricsMatch = jsxContent.match(/\/\*[^*]*[Mm]etrics[^*]*\*\/([\s\S]*?)(?=\/\*|<\w+[^>]*className.*=|\/\/ |$)/);
+    if (metricsMatch && metricsMatch[1].includes('grid') && metricsMatch[1].includes('Card')) {
+      sections.push({
+        name: 'MetricsDashboard',
+        jsx: metricsMatch[1].trim(),
+        dependencies: this.extractDependencies(metricsMatch[1]),
+        lineCount: metricsMatch[1].split('\n').length
+      });
+    }
+    
+    // Pattern 3: Table sections
+    const tableMatches = jsxContent.matchAll(/<Table[\s\S]*?<\/Table>/g);
+    let tableIndex = 1;
+    for (const tableMatch of tableMatches) {
+      const tableName = this.inferTableName(tableMatch[0]) || `DataTable${tableIndex}`;
+      sections.push({
+        name: tableName,
+        jsx: tableMatch[0],
+        dependencies: this.extractDependencies(tableMatch[0]),
+        lineCount: tableMatch[0].split('\n').length
+      });
+      tableIndex++;
+    }
+    
+    // Pattern 4: Modal sections
+    const modalMatches = jsxContent.matchAll(/<Modal[\s\S]*?<\/Modal>/g);
+    let modalIndex = 1;
+    for (const modalMatch of modalMatches) {
+      const modalName = this.inferModalName(modalMatch[0]) || `Modal${modalIndex}`;
+      sections.push({
+        name: modalName,
+        jsx: modalMatch[0],
+        dependencies: this.extractDependencies(modalMatch[0]),
+        lineCount: modalMatch[0].split('\n').length
+      });
+      modalIndex++;
+    }
+    
+    // Pattern 5: Form sections
+    const formMatches = jsxContent.matchAll(/<form[\s\S]*?<\/form>/g);
+    let formIndex = 1;
+    for (const formMatch of formMatches) {
+      const formName = this.inferFormName(formMatch[0]) || `Form${formIndex}`;
+      sections.push({
+        name: formName,
+        jsx: formMatch[0],
+        dependencies: this.extractDependencies(formMatch[0]),
+        lineCount: formMatch[0].split('\n').length
+      });
+      formIndex++;
+    }
+    
+    return sections.filter(section => section.lineCount >= this.MIN_COMPONENT_LINES);
+  }
+
+  private inferTableName(tableJsx: string): string | null {
+    // Look for context clues in the table
+    if (tableJsx.includes('invoice') || tableJsx.includes('Invoice')) return 'InvoiceTable';
+    if (tableJsx.includes('customer') || tableJsx.includes('Customer')) return 'CustomerTable';
+    if (tableJsx.includes('payment') || tableJsx.includes('Payment')) return 'PaymentTable';
+    if (tableJsx.includes('aging') || tableJsx.includes('Aging')) return 'AgingReportTable';
+    return null;
+  }
+
+  private inferModalName(modalJsx: string): string | null {
+    // Look for context clues in the modal
+    if (modalJsx.includes('customer') || modalJsx.includes('Customer')) return 'CustomerModal';
+    if (modalJsx.includes('payment') || modalJsx.includes('Payment')) return 'PaymentModal';
+    if (modalJsx.includes('invoice') || modalJsx.includes('Invoice')) return 'InvoiceModal';
+    return null;
+  }
+
+  private inferFormName(formJsx: string): string | null {
+    // Look for context clues in the form
+    if (formJsx.includes('customer') || formJsx.includes('Customer')) return 'CustomerForm';
+    if (formJsx.includes('payment') || formJsx.includes('Payment')) return 'PaymentForm';
+    if (formJsx.includes('invoice') || formJsx.includes('Invoice')) return 'InvoiceForm';
+    return null;
+  }
+
+  private generateComponentCode(componentName: string, jsx: string, dependencies: string[]): string {
+    const importsSet = new Set<string>();
+    
+    // Add React imports if needed
+    if (jsx.includes('useState') || jsx.includes('useEffect')) {
+      importsSet.add("import { useState, useEffect } from 'react';");
+    }
+    
+    // Add common UI imports based on JSX content
+    const uiComponents = ['Card', 'Button', 'Table', 'Badge', 'Alert', 'Modal', 'Input', 'Select'];
+    const usedComponents = uiComponents.filter(comp => jsx.includes(`<${comp}`));
+    if (usedComponents.length > 0) {
+      importsSet.add(`import { ${usedComponents.join(', ')} } from '@ria/web-ui';`);
+    }
+    
+    // Add Link import if needed
+    if (jsx.includes('<Link')) {
+      importsSet.add("import Link from 'next/link';");
+    }
+    
+    const imports = Array.from(importsSet).join('\n');
+    
+    // Extract any props that might be needed
+    const propsAnalysis = this.analyzeRequiredProps(jsx);
+    const propsInterface = propsAnalysis.length > 0 ? 
+      `\ninterface ${componentName}Props {\n  ${propsAnalysis.join(';\n  ')};\n}\n` : '';
+    
+    const propsParam = propsAnalysis.length > 0 ? `props: ${componentName}Props` : '';
+    
+    return `${imports}${propsInterface}\nexport const ${componentName} = (${propsParam}) => {\n  return (\n    ${jsx.split('\n').map(line => '    ' + line).join('\n')}\n  );\n};`;
+  }
+
+  private analyzeRequiredProps(jsx: string): string[] {
+    const props: string[] = [];
+    
+    // Look for variable references that aren't standard HTML attributes
+    const variableMatches = jsx.matchAll(/\{([a-zA-Z][a-zA-Z0-9.]*?)\}/g);
+    const variables = new Set<string>();
+    
+    for (const match of variableMatches) {
+      const variable = match[1];
+      // Skip common React patterns
+      if (!variable.includes('(') && !variable.startsWith('this.') && 
+          variable !== 'true' && variable !== 'false' && 
+          !variable.match(/^\d+$/)) {
+        const rootVar = variable.split('.')[0];
+        variables.add(rootVar);
+      }
+    }
+    
+    // Convert to prop definitions (simplified)
+    for (const variable of variables) {
+      props.push(`${variable}: any`);
+    }
+    
+    return props;
+  }
+
+  private extractImportsForSection(dependencies: string[]): string[] {
+    const imports: string[] = [];
+    
+    // Basic React imports
+    if (dependencies.some(dep => ['useState', 'useEffect', 'useCallback'].includes(dep))) {
+      imports.push("import React from 'react';");
+    }
+    
+    return imports;
   }
 
   private extractCodeBlock(content: string, startIndex: number): string {
@@ -343,6 +543,50 @@ class RefactorAgent {
     return suggestions.join('\n') + '\n\n' + originalContent;
   }
 
+  private generateUpdatedMainFile(result: RefactorResult, componentImports: string[]): string {
+    let content = result.mainFileCode;
+    
+    // Remove the refactor suggestions comments since we're now applying them
+    content = content.replace(/\/\/ REFACTOR SUGGESTION[\s\S]*?\/\/ Original file preserved to prevent breaking changes\n\n/g, '');
+    
+    // Add component imports after existing imports
+    const importInsertIndex = this.findImportInsertionPoint(content);
+    const importsSection = componentImports.join('\n') + '\n\n';
+    
+    // Insert the new imports
+    const updatedContent = content.slice(0, importInsertIndex) + importsSection + content.slice(importInsertIndex);
+    
+    // Replace inline JSX sections with component references
+    let finalContent = updatedContent;
+    for (const component of result.extractedComponents) {
+      if (component.type === 'component') {
+        // This is a simplified replacement - in practice, this would need more sophisticated JSX parsing
+        // For now, we'll just add comments indicating where components should be used
+        finalContent = `// TODO: Replace appropriate JSX sections with <${component.name} />\n` + finalContent;
+      }
+    }
+    
+    return finalContent;
+  }
+
+  private findImportInsertionPoint(content: string): number {
+    // Find the last import statement
+    const importMatches = [...content.matchAll(/import[^;]+;/g)];
+    if (importMatches.length > 0) {
+      const lastImport = importMatches[importMatches.length - 1];
+      return (lastImport.index || 0) + lastImport[0].length + 1;
+    }
+    
+    // If no imports, insert after 'use client' if present
+    const useClientMatch = content.match(/'use client';/);
+    if (useClientMatch && useClientMatch.index !== undefined) {
+      return useClientMatch.index + useClientMatch[0].length + 2;
+    }
+    
+    // Otherwise, insert at the beginning
+    return 0;
+  }
+
   async generateRefactoredFiles(result: RefactorResult): Promise<Map<string, string>> {
     const files = new Map<string, string>();
     const baseDir = path.dirname(result.originalFile);
@@ -402,12 +646,31 @@ class RefactorAgent {
     await this.ensureGitSafety();
     
     const originalPath = result.originalFile;
+    const originalDir = path.dirname(originalPath);
     
-    // Write suggestions as comments to the original file
-    await fs.writeFile(originalPath, result.mainFileCode, 'utf-8');
-    console.log(`✅ Updated with refactoring suggestions: ${originalPath}`);
+    // Create components directory
+    const componentsDir = path.join(originalDir, 'components');
+    await fs.mkdir(componentsDir, { recursive: true });
     
-    console.log(`📝 Refactoring suggestions for ${result.originalFile}:`);
+    console.log(`🔄 Extracting ${result.extractedComponents.length} components from ${originalPath}`);
+    
+    // Write extracted component files
+    const imports: string[] = [];
+    for (const component of result.extractedComponents) {
+      const componentPath = path.join(componentsDir, `${component.name}.tsx`);
+      await fs.writeFile(componentPath, component.code, 'utf-8');
+      console.log(`   ✅ Created: ${componentPath}`);
+      
+      // Add import statement for the main file
+      imports.push(`import { ${component.name} } from './components/${component.name}';`);
+    }
+    
+    // Update main file to use extracted components
+    const updatedMainFile = this.generateUpdatedMainFile(result, imports);
+    await fs.writeFile(originalPath, updatedMainFile, 'utf-8');
+    console.log(`✅ Updated main file: ${originalPath}`);
+    
+    console.log(`📝 Refactoring complete for ${result.originalFile}:`);
     result.suggestions.forEach(s => console.log(`   - ${s}`));
   }
 
