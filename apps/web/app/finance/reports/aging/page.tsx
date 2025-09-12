@@ -176,8 +176,8 @@ export default function AgingReportsPage() {
   };
 
   const tabConfig = [
-    { id: 'receivables', label: 'Accounts Receivable', icon: '📥' },
-    { id: 'payables', label: 'Accounts Payable', icon: '📤' }
+    { id: 'receivables', label: 'Accounts Receivable', icon: '' },
+    { id: 'payables', label: 'Accounts Payable', icon: '' }
   ];
 
   const currentReport = activeTab === 'receivables' ? agingReceivables : agingPayables;

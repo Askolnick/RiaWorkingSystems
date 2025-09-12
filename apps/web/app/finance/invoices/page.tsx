@@ -125,7 +125,7 @@ export default function FinanceInvoicesPage() {
                     {stats.totalInvoices}
                   </p>
                 </div>
-                <div className="text-2xl">📄</div>
+                <div className="text-2xl"></div>
               </div>
             </Card>
             <Card className="p-6">
@@ -136,7 +136,7 @@ export default function FinanceInvoicesPage() {
                     ${stats.totalRevenue.toLocaleString()}
                   </p>
                 </div>
-                <div className="text-2xl">💰</div>
+                <div className="text-2xl"></div>
               </div>
             </Card>
             <Card className="p-6">
@@ -158,7 +158,7 @@ export default function FinanceInvoicesPage() {
                     ${stats.totalOverdueAmount.toLocaleString()}
                   </p>
                 </div>
-                <div className="text-2xl">⚠️</div>
+                <div className="text-2xl">️</div>
               </div>
             </Card>
           </div>

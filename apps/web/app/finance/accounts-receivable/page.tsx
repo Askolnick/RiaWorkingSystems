@@ -231,7 +231,7 @@ export default function AccountsReceivablePage() {
 
   const handleExportAgingReport = (format: 'pdf' | 'excel' | 'csv') => {
     // TODO: Implement export functionality
-    console.log(`Exporting aging report as ${format}`);
+    
   };
 
   if (customerAccountsLoading && customerAccounts.length === 0) return <LoadingCard />;
@@ -281,7 +281,7 @@ export default function AccountsReceivablePage() {
                       {formatCurrency(metrics.totalOutstanding)}
                     </p>
                   </div>
-                  <div className="text-2xl">💰</div>
+                  <div className="text-2xl"></div>
                 </div>
               </Card>
               <Card className="p-6">
@@ -292,7 +292,7 @@ export default function AccountsReceivablePage() {
                       {formatCurrency(metrics.overdueAmount)}
                     </p>
                   </div>
-                  <div className="text-2xl">⚠️</div>
+                  <div className="text-2xl">️</div>
                 </div>
               </Card>
               <Card className="p-6">
@@ -303,7 +303,7 @@ export default function AccountsReceivablePage() {
                       {Math.round(metrics.averageDaysToPay)} days
                     </p>
                   </div>
-                  <div className="text-2xl">📅</div>
+                  <div className="text-2xl"></div>
                 </div>
               </Card>
               <Card className="p-6">
@@ -314,7 +314,7 @@ export default function AccountsReceivablePage() {
                       {customerAccounts.length}
                     </p>
                   </div>
-                  <div className="text-2xl">👥</div>
+                  <div className="text-2xl"></div>
                 </div>
               </Card>
             </div>

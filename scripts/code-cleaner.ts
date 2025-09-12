@@ -98,7 +98,25 @@ class CodeCleaner {
       message: 'Emojis in production code affect accessibility and professionalism',
       suggestion: 'Use proper icons from design system instead',
       autofix: (content, match) => {
-        return content.replace(match[0], ''); // Remove emoji
+        // Map common emojis to proper icon components
+        const emojiToIcon: Record<string, string> = {
+          '📄': '<DocumentIcon className="h-8 w-8" />',
+          '📋': '<ClipboardDocumentIcon className="h-8 w-8" />',
+          '💳': '<CreditCardIcon className="h-8 w-8" />',
+          '💰': '<CurrencyDollarIcon className="h-8 w-8" />',
+          '📊': '<ChartBarIcon className="h-8 w-8" />',
+          '📈': '<ChartLineUpIcon className="h-8 w-8" />',
+          '⚖️': '<ScaleIcon className="h-8 w-8" />',
+          '💵': '<BanknotesIcon className="h-8 w-8" />',
+          '🏦': '<BuildingLibraryIcon className="h-8 w-8" />',
+          '🔄': '<ArrowPathIcon className="h-8 w-8" />',
+          '🧾': '<ReceiptPercentIcon className="h-8 w-8" />',
+          '💱': '<CurrencyExchangeIcon className="h-8 w-8" />',
+          '💸': '<BanknotesIcon className="h-8 w-8" />'
+        };
+        
+        const replacement = emojiToIcon[match[0]] || '<div className="h-8 w-8 bg-gray-200 rounded"></div>';
+        return content.replace(match[0], replacement);
       }
     },
 
@@ -317,6 +335,19 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
           line: 1,
           message: 'Loading state without proper LoadingCard component',
           suggestion: 'Use <LoadingCard /> from @ria/web-ui for loading states'
+        });
+      }
+      
+      // Check if icons are used but not imported
+      const iconPattern = /<(\w+Icon)\s+className="[^"]*"\s*\/>/g;
+      const iconMatches = Array.from(content.matchAll(iconPattern));
+      if (iconMatches.length > 0 && !content.includes('@heroicons/react')) {
+        violations.push({
+          type: 'warning',
+          rule: 'missing-heroicons-import',
+          line: 1,
+          message: 'Heroicons used but not imported',
+          suggestion: 'Add import statement: import { IconName } from \'@heroicons/react/24/outline\''
         });
       }
     }
