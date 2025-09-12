@@ -174,8 +174,9 @@ const MyComponent = () => {
 ### Automated Development Process
 1. **Use the Code Cleanup Agent** - `npx tsx scripts/code-cleaner.ts` enforces all architectural rules
 2. **Use the UI Agent** - `npx tsx scripts/ui-agent.ts` for creating components following design system
-3. **Use the Refactor Agent** - `npx tsx scripts/refactor-agent.ts` for breaking down large files
-4. **Manual Review** - Check agent outputs and architectural compliance
+3. **Use the Integration Agent** - `npx tsx scripts/integration-agent.ts` for systematically integrating pending modules
+4. **Use the Refactor Agent** - `npx tsx scripts/refactor-agent.ts` for breaking down large files
+5. **Manual Review** - Check agent outputs and architectural compliance
 
 ### Creating New Features
 
@@ -431,7 +432,8 @@ The UI Agent handles:
 ```bash
 # Development Agents (USE THESE FIRST)
 npx tsx scripts/code-cleaner.ts     # Fix all code quality issues
-npx tsx scripts/ui-agent.ts         # Create UI components  
+npx tsx scripts/ui-agent.ts         # Create UI components
+npx tsx scripts/integration-agent.ts # Integrate pending modules systematically  
 npx tsx scripts/refactor-agent.ts   # Break down large files
 npx tsx scripts/tool-builder.ts     # Create new development tools
 
