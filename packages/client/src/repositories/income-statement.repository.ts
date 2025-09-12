@@ -250,6 +250,11 @@ export class MockIncomeStatementRepository extends MockRepository<IncomeStatemen
   }
 
   private initializeMockData(): void {
+    // Skip initialization during SSR
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     try {
       const existing = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
       if (!existing || existing.length === 0) {
