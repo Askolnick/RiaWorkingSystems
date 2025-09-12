@@ -73,3 +73,47 @@ Desktop.ini
 # pnpm-lock.yaml
 # package-lock.json
 # yarn.lock
+
+# Claude Code specific files
+.claude/
+.claude/**/*
+
+# Tool outputs and temporary files
+tools/
+scripts/output/
+scripts/temp/
+*.backup
+*.bak
+*.old
+
+# Agent-generated files that shouldn't be committed
+ARCHITECTURE_AGENT.md
+*.agent-output.*
+*.agent-log.*
+
+# Modules being integrated (temporary staging area)
+"Modules that need to be integrated"/
+Modules\ that\ need\ to\ be\ integrated/
+
+# GitHub workflows (until ready for production)
+.github/
+
+# Development documentation that's not ready
+DEVELOPMENT_*.md
+MIGRATION_*.md
+TODO_*.md
+
+# Architectural violations - prevent nested packages
+apps/*/packages/
+apps/*/node_modules/
+apps/*/dist/
+apps/*/build/
+
+# Prevent accidental server code in frontend
+apps/web/server/
+apps/web/api/
+
+# Prevent accidental frontend code in backend
+apps/api/components/
+apps/api/pages/
+apps/api/public/

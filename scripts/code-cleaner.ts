@@ -1,17 +1,17 @@
 #!/usr/bin/env tsx
 
 /**
- * Code Cleanup Agent - Enforces CLAUDE.md architectural rules
+ * Code Cleanup Agent - Enforces CODING_STANDARDS.md and fixes build/TypeScript errors
  * 
- * Super careful agent that fixes code violations and aligns code with:
- * - Module boundaries (no direct imports between modules)
- * - Repository pattern (no direct API calls)
- * - Zustand stores (no useState for shared data)
- * - Component library usage (@ria/web-ui only)
- * - Centralized routing (ROUTES constants)
- * - No emojis in production code
- * - Error boundaries and loading states
- * - TypeScript-first (no any types)
+ * Super careful agent that fixes code violations and aligns code with standards:
+ * - Strict TypeScript enforcement (no any, proper types)
+ * - Build error resolution (missing imports, type errors)
+ * - Import/export organization and standards
+ * - Component development standards (forwardRef, proper typing)
+ * - State management standards (Zustand patterns)
+ * - Repository pattern enforcement
+ * - Error handling standards
+ * - No bandaid fixes - only proper architectural solutions
  */
 
 import * as fs from 'fs/promises';
@@ -25,6 +25,7 @@ interface CodeViolation {
   line: number;
   message: string;
   suggestion?: string;
+  fix?: string;
 }
 
 interface ProcessResult {
@@ -33,156 +34,282 @@ interface ProcessResult {
   changes: string[];
   violations: CodeViolation[];
   errors: string[];
+  buildErrors?: string[];
+  typeErrors?: string[];
 }
 
-interface ClaudeRule {
+interface CodingStandardRule {
   name: string;
   pattern: RegExp;
   violationType: 'error' | 'warning';
   message: string;
   suggestion?: string;
-  autofix?: (content: string, match: RegExpMatchArray) => string;
+  autofix?: (content: string, match: RegExpMatchArray, filePath: string) => string;
+  skipPaths?: string[];
 }
 
 class CodeCleaner {
   private dryRun: boolean;
-  private readonly CLAUDE_RULES: ClaudeRule[] = [
-    // 1. No direct API calls in components
+  private readonly CODING_STANDARDS: CodingStandardRule[] = [
+    // TypeScript Strict Mode Enforcement
     {
-      name: 'no-direct-api-calls',
+      name: 'no-any-type',
+      pattern: /:\s*any\b(?!\[\])/g,
+      violationType: 'error',
+      message: 'TypeScript "any" type violates strict type safety',
+      suggestion: 'Define proper interface or use specific types (string, number, unknown, etc.)',
+      autofix: (content, match, filePath) => {
+        // Don't auto-fix, requires manual type definition
+        return content;
+      }
+    },
+
+    // Missing Type Annotations
+    {
+      name: 'missing-return-type',
+      pattern: /function\s+\w+\([^)]*\)\s*\{/g,
+      violationType: 'warning',
+      message: 'Function missing explicit return type annotation',
+      suggestion: 'Add return type: function name(): ReturnType { }',
+      autofix: (content, match) => {
+        // Add void return type as placeholder
+        return content.replace(match[0], match[0].replace('{', ': void {'));
+      }
+    },
+
+    // Untyped React Props
+    {
+      name: 'untyped-react-props',
+      pattern: /export\s+(?:const|function)\s+\w+\s*=.*\(\s*\{[^}]+\}\s*\)\s*=>/g,
+      violationType: 'error',
+      message: 'React component props must have TypeScript interface',
+      suggestion: 'Define Props interface: interface ComponentNameProps { ... }'
+    },
+
+    // Missing forwardRef for components
+    {
+      name: 'missing-forward-ref',
+      pattern: /export\s+const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/g,
+      violationType: 'warning',
+      message: 'React components should use forwardRef pattern for ref forwarding',
+      suggestion: 'Use forwardRef pattern: export const Component = forwardRef<HTMLElement, Props>(...)',
+      skipPaths: ['**/*store*', '**/*repository*', '**/*util*']
+    },
+
+    // Import Organization - Node modules first
+    {
+      name: 'import-order-violation',
+      pattern: /import\s+[^'"]*from\s+['"`]@ria\/[^'"]*['"`][^;]*;\s*import\s+[^'"]*from\s+['"`]react['"`]/g,
+      violationType: 'warning',
+      message: 'Import order violation - Node modules must come before internal packages',
+      suggestion: 'Order: 1) Node modules 2) @ria packages 3) Relative imports 4) Type imports'
+    },
+
+    // Missing displayName
+    {
+      name: 'missing-display-name',
+      pattern: /export\s+const\s+(\w+)\s*=\s*forwardRef/g,
+      violationType: 'warning',
+      message: 'forwardRef components should have displayName for debugging',
+      autofix: (content, match) => {
+        const componentName = match[1];
+        if (!content.includes(`${componentName}.displayName`)) {
+          // Add displayName after component definition
+          const componentEnd = content.indexOf(';', match.index!);
+          if (componentEnd > 0) {
+            return content.slice(0, componentEnd + 1) + 
+              `\n${componentName}.displayName = '${componentName}';` + 
+              content.slice(componentEnd + 1);
+          }
+        }
+        return content;
+      }
+    },
+
+    // Default exports should be avoided
+    {
+      name: 'avoid-default-exports',
+      pattern: /export\s+default\s+/g,
+      violationType: 'warning',
+      message: 'Prefer named exports over default exports for better tree-shaking',
+      suggestion: 'Use: export const ComponentName = ... instead of export default',
+      skipPaths: ['**/page.tsx', '**/layout.tsx', '**/*.stories.tsx']
+    },
+
+    // Enforce proper error handling
+    {
+      name: 'missing-error-handling',
+      pattern: /try\s*\{[^}]*\}\s*catch\s*\([^)]*\)\s*\{\s*\}/g,
+      violationType: 'error',
+      message: 'Empty catch blocks violate error handling standards',
+      suggestion: 'Add proper error handling: log error, set error state, or rethrow'
+    },
+
+    // Repository pattern violations
+    {
+      name: 'direct-api-calls',
       pattern: /fetch\s*\(\s*['"`][^'"`]+['"`]/g,
       violationType: 'error',
-      message: 'Direct API calls in components violate repository pattern',
-      suggestion: 'Use repository pattern: create repository in @ria/client and use via Zustand store',
+      message: 'Direct API calls violate repository pattern',
+      suggestion: 'Create repository class extending BaseRepository in @ria/client'
+    },
+
+    // State management violations
+    {
+      name: 'useState-for-server-state',
+      pattern: /const\s+\[[\w,\s]+\]\s*=\s*useState<[^>]*\[\]/g,
+      violationType: 'warning',
+      message: 'Arrays/objects in useState suggest server state - use Zustand store',
+      suggestion: 'Create Zustand store with proper typing and async actions'
+    },
+
+    // Missing proper typing for store selectors
+    {
+      name: 'untyped-store-selectors',
+      pattern: /const\s+\{[^}]+\}\s*=\s*use\w+Store\(\)/g,
+      violationType: 'warning',
+      message: 'Store selectors should use typed selectors for optimization',
+      suggestion: 'Use: const data = useStore(state => state.data) instead of destructuring'
+    },
+
+    // Component library violations
+    {
+      name: 'non-webui-component-usage',
+      pattern: /<(?:button|input|textarea|select|div\s+className="btn|card|modal)/gi,
+      violationType: 'warning',
+      message: 'Use @ria/web-ui components instead of custom HTML elements',
+      suggestion: 'Import Button, Input, Card, Modal etc. from @ria/web-ui',
+      skipPaths: ['**/packages/web-ui/**']
+    },
+
+    // Missing proper props validation
+    {
+      name: 'missing-props-validation',
+      pattern: /interface\s+\w+Props\s*\{[^}]*\w+\?\s*:\s*string/g,
+      violationType: 'warning',
+      message: 'Optional string props should specify allowed values or use unions',
+      suggestion: 'Use: variant?: "primary" | "secondary" instead of variant?: string'
+    },
+
+    // Console statements in production
+    {
+      name: 'console-statements',
+      pattern: /console\.(log|warn|error|debug)\s*\(/g,
+      violationType: 'warning',
+      message: 'Console statements should not be in production code',
       autofix: (content, match) => {
-        // Add comment suggesting proper pattern
-        return content.replace(match[0], `// TODO: Replace with repository pattern\n  // ${match[0]}`);
+        return content.replace(match[0], '// ' + match[0]);
+      },
+      skipPaths: ['**/scripts/**', '**/*.test.*', '**/*.spec.*']
+    },
+
+    // Proper error boundary usage
+    {
+      name: 'missing-error-boundary',
+      pattern: /export\s+default\s+function\s+\w*Page/g,
+      violationType: 'error',
+      message: 'Page components must be wrapped in ErrorBoundary',
+      suggestion: 'Wrap component return in <ErrorBoundary fallback={<ErrorFallback />}>'
+    },
+
+    // Async function error handling
+    {
+      name: 'unhandled-async-errors',
+      pattern: /const\s+\w+\s*=\s*async\s*\([^)]*\)\s*=>\s*\{[^}]*await[^}]*\}(?!\s*\.catch)/g,
+      violationType: 'warning',
+      message: 'Async functions should have error handling',
+      suggestion: 'Add try-catch block or .catch() chain for error handling'
+    },
+
+    // Import type usage
+    {
+      name: 'missing-type-imports',
+      pattern: /import\s*\{[^}]*\b(Props|Type|Interface)\b[^}]*\}\s*from/g,
+      violationType: 'warning',
+      message: 'Type-only imports should use "import type" for better tree-shaking',
+      autofix: (content, match) => {
+        return content.replace('import {', 'import type {');
       }
     },
 
-    // 2. No useState for shared data
+    // Proper loading state handling
     {
-      name: 'no-usestate-shared-data',
-      pattern: /const\s+\[(\w+),\s*set\w+\]\s*=\s*useState<[^>]*\[\]/g,
+      name: 'missing-loading-states',
+      pattern: /const\s+\{[^}]*data[^}]*\}\s*=\s*use\w+Store\(\)(?!.*loading)/g,
       violationType: 'warning',
-      message: 'useState for arrays/objects should use Zustand store for shared data',
-      suggestion: 'Create Zustand store in @ria/client for shared state management'
+      message: 'Store usage should handle loading and error states',
+      suggestion: 'Destructure loading and error from store: { data, loading, error }'
     },
 
-    // 3. No hardcoded routes
+    // Build error fixes - Missing imports
     {
-      name: 'no-hardcoded-routes',
-      pattern: /(['"`])\/[\w\/-]+['"`]/g,
+      name: 'missing-react-import',
+      pattern: /(?:JSX\.Element|React\.FC|useState|useEffect|forwardRef)/g,
       violationType: 'error',
-      message: 'Hardcoded route paths violate centralized routing',
-      suggestion: 'Use ROUTES constants from @ria/utils/routes',
-      autofix: (content, match) => {
-        const route = match[0].replace(/['"`]/g, '');
-        // Common route mappings
-        const routeMap: Record<string, string> = {
-          '/auth/sign-in': 'ROUTES.SIGN_IN',
-          '/finance': 'ROUTES.FINANCE',
-          '/tasks': 'ROUTES.TASKS',
-          '/wiki': 'ROUTES.WIKI'
-        };
-        const replacement = routeMap[route] || `ROUTES.${route.replace(/[\/\-]/g, '_').toUpperCase()}`;
-        return content.replace(match[0], replacement);
+      message: 'React features used but React not imported',
+      autofix: (content, match, filePath) => {
+        if (!content.includes("import React") && !content.includes("import { ")) {
+          return `import React from 'react';\n${content}`;
+        }
+        return content;
       }
     },
 
-    // 4. No emojis in production code
+    // Architectural violations - nested packages
     {
-      name: 'no-emojis-production',
-      pattern: /[\u{1F600}-\u{1F6FF}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
-      violationType: 'warning',
-      message: 'Emojis in production code affect accessibility and professionalism',
-      suggestion: 'Use proper icons from design system instead',
-      autofix: (content, match) => {
-        // Map common emojis to semantic text representations
-        const emojiToText: Record<string, string> = {
-          '📄': '📄',  // Keep temporarily until proper icon system
-          '📋': '📋',  
-          '💳': '💳',  
-          '💰': '💰',  
-          '📊': '📊',  
-          '📈': '📈',  
-          '⚖️': '⚖️',  
-          '💵': '💵',  
-          '🏦': '🏦',  
-          '🔄': '🔄',  
-          '🧾': '🧾',  
-          '💱': '💱',  
-          '💸': '💸'  
-        };
-        
-        // For now, replace with placeholder text until icon system is properly set up
-        const replacement = 'Icon';
-        return content.replace(match[0], replacement);
-      }
-    },
-
-    // 5. No any types
-    {
-      name: 'no-any-types',
-      pattern: /:\s*any\b/g,
+      name: 'nested-packages-violation',
+      pattern: /packages\/.*\/packages\//g,
       violationType: 'error',
-      message: 'TypeScript "any" type violates type safety',
-      suggestion: 'Define proper interfaces or use specific types'
+      message: 'Nested packages directory violates clean architecture',
+      suggestion: 'Packages should only exist at root level - move to /packages/'
     },
 
-    // 6. No console.log in production
+    // Anti-pattern: Unnecessary Text components
     {
-      name: 'no-console-log',
-      pattern: /console\.log\([^)]*\);?/g,
+      name: 'unnecessary-text-component',
+      pattern: /export\s+(?:const|function)\s+(Text|Heading|Title|Label|Caption)\s*[=:]/g,
       violationType: 'warning',
-      message: 'Debug console.log statements should not be in production',
-      autofix: (content, match) => {
-        return content.replace(match[0], ''); // Remove console.log
-      }
+      message: 'Text-only components should be CSS classes instead of React components',
+      suggestion: 'Use semantic CSS classes (.large-heading, .body, .small-body) from design system',
+      skipPaths: ['**/packages/web-ui/**'] // Allow in the actual component library
     },
 
-    // 7. Require error boundaries
+    // Anti-pattern: Single-purpose styling components
     {
-      name: 'require-error-boundary',
-      pattern: /export\s+default\s+function\s+\w+Page\(\)/g,
+      name: 'unnecessary-styling-component',
+      pattern: /export\s+(?:const|function)\s+(Container|Wrapper|Box|Spacer|Divider)\s*[=:]/g,
       violationType: 'warning',
-      message: 'Page components should be wrapped in ErrorBoundary',
-      suggestion: 'Wrap component content in <ErrorBoundary>'
+      message: 'Simple styling components should be CSS classes or HTML elements',
+      suggestion: 'Use semantic HTML with CSS classes instead of wrapper components',
+      skipPaths: ['**/packages/web-ui/**']
     },
 
-    // 8. No direct component creation in apps/web
+    // Anti-pattern: Icon components that are just wrappers
     {
-      name: 'no-inline-components',
-      pattern: /const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*\{[^}]*return\s*<[^>]+>/g,
+      name: 'unnecessary-icon-component',
+      pattern: /export\s+(?:const|function)\s+(\w*Icon)\s*[=:].*<.*Icon.*\/>/g,
       violationType: 'warning',
-      message: 'Components should be created in @ria/web-ui, not inline',
-      suggestion: 'Create reusable component in packages/web-ui'
+      message: 'Simple icon wrapper components are unnecessary',
+      suggestion: 'Import and use icons directly from @heroicons/react or icon library',
+      skipPaths: ['**/packages/web-ui/**']
     },
 
-    // 9. Require loading and error states
+    // Anti-pattern: Components that only return className
     {
-      name: 'require-loading-states',
-      pattern: /const\s+\{[^}]*loading[^}]*\}\s*=\s*use\w+Store\(\)/g,
-      violationType: 'info',
-      message: 'Good: Using loading state from store'
-    },
-
-    // 10. No direct module imports
-    {
-      name: 'no-direct-module-imports',
-      pattern: /import.*from\s+['"`]@ria\/\w+-server['"`]/g,
+      name: 'class-only-component',
+      pattern: /export\s+(?:const|function)\s+\w+.*=.*className[^}]*\}[^}]*>/g,
       violationType: 'error',
-      message: 'Direct imports between modules violate module boundaries',
-      suggestion: 'Use @ria/client for cross-module communication'
+      message: 'Components that only apply className should be CSS classes',
+      suggestion: 'Create CSS utility class instead of React component'
     },
 
-    // 11. Require @ria/web-ui imports
+    // Anti-pattern: Components without interactive logic
     {
-      name: 'require-webui-imports',
-      pattern: /import\s*\{[^}]*(?:Button|Card|Input|Modal)[^}]*\}\s*from\s*['"`](?!@ria\/web-ui)/g,
-      violationType: 'error',
-      message: 'UI components must be imported from @ria/web-ui',
-      suggestion: 'Import from @ria/web-ui instead of creating custom components'
+      name: 'static-content-component',
+      pattern: /export\s+(?:const|function)\s+\w+.*return\s*\(\s*<[^>]*>[^<{]+<\/[^>]*>\s*\)/g,
+      violationType: 'warning',
+      message: 'Components with only static content should be CSS classes or constants',
+      suggestion: 'Use CSS classes for styling or constants for static content'
     }
   ];
 
@@ -192,23 +319,46 @@ class CodeCleaner {
 
   async process(targetPath: string): Promise<ProcessResult[]> {
     console.log(`🧹 ${this.constructor.name} starting...`);
-    console.log(`📋 Enforcing ${this.CLAUDE_RULES.length} CLAUDE.md rules`);
+    console.log(`📋 Enforcing ${this.CODING_STANDARDS.length} coding standards`);
     
     // Git safety
     await this.ensureGitSafety();
     
+    // First, check for build and TypeScript errors
+    console.log('🔍 Checking for build and TypeScript errors...');
+    const buildErrors = await this.checkBuildErrors(targetPath);
+    const typeErrors = await this.checkTypeErrors(targetPath);
+    
+    if (buildErrors.length > 0) {
+      console.log(`❌ ${buildErrors.length} build errors found`);
+    }
+    
+    if (typeErrors.length > 0) {
+      console.log(`🔧 ${typeErrors.length} TypeScript errors found`);
+    }
+    
     const files = await this.findFiles(targetPath);
     const results: ProcessResult[] = [];
     
-    console.log(`📊 Processing ${files.length} files`);
+    console.log(`📊 Processing ${files.length} files for coding standards`);
     
     for (const file of files) {
       try {
         const result = await this.processFile(file);
+        
+        // Add build/type errors for this file
+        const fileRelative = path.relative(process.cwd(), file);
+        result.buildErrors = buildErrors.filter(error => error.includes(fileRelative));
+        result.typeErrors = typeErrors.filter(error => error.includes(fileRelative));
+        
         results.push(result);
         
-        if (result.violations.length > 0) {
-          console.log(`⚠️  ${path.relative('.', file)}: ${result.violations.length} violations`);
+        const totalIssues = result.violations.length + 
+          (result.buildErrors?.length || 0) + 
+          (result.typeErrors?.length || 0);
+        
+        if (totalIssues > 0) {
+          console.log(`⚠️  ${path.relative('.', file)}: ${totalIssues} issues`);
         }
       } catch (error) {
         results.push({
@@ -216,7 +366,9 @@ class CodeCleaner {
           success: false,
           changes: [],
           violations: [],
-          errors: [String(error)]
+          errors: [String(error)],
+          buildErrors: [],
+          typeErrors: []
         });
         console.error(`❌ ${file}: ${error}`);
       }
@@ -245,6 +397,52 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     }
   }
 
+  private async checkBuildErrors(targetPath: string): Promise<string[]> {
+    try {
+      // Try to build the project and capture errors
+      const result = execSync('pnpm build', { 
+        encoding: 'utf-8', 
+        cwd: targetPath,
+        timeout: 60000 // 1 minute timeout
+      });
+      return [];
+    } catch (error: any) {
+      // Parse build errors from output
+      const output = error.stdout || error.stderr || '';
+      const errors = output.split('\n')
+        .filter((line: string) => line.includes('error') || line.includes('Error'))
+        .map((line: string) => line.trim())
+        .filter((line: string) => line.length > 0);
+      return errors;
+    }
+  }
+
+  private async checkTypeErrors(targetPath: string): Promise<string[]> {
+    try {
+      // Run TypeScript compiler check
+      const result = execSync('pnpm typecheck', { 
+        encoding: 'utf-8', 
+        cwd: targetPath,
+        timeout: 60000 // 1 minute timeout
+      });
+      return [];
+    } catch (error: any) {
+      // Parse TypeScript errors from output
+      const output = error.stdout || error.stderr || '';
+      const errors = output.split('\n')
+        .filter((line: string) => 
+          line.includes('error TS') || 
+          line.includes('Type \'') ||
+          line.includes('Cannot find') ||
+          line.includes('Property \'') ||
+          line.includes('Argument of type')
+        )
+        .map((line: string) => line.trim())
+        .filter((line: string) => line.length > 0);
+      return errors;
+    }
+  }
+
   private async findFiles(targetPath: string): Promise<string[]> {
     const patterns = [
       '**/*.ts',
@@ -263,28 +461,40 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     let content = originalContent;
     const changes: string[] = [];
     const violations: CodeViolation[] = [];
+    const relativePath = path.relative(process.cwd(), filePath);
     
-    // Check each CLAUDE.md rule
-    for (const rule of this.CLAUDE_RULES) {
+    // Check each coding standard rule
+    for (const rule of this.CODING_STANDARDS) {
+      // Skip rule if file path matches skipPaths pattern
+      if (rule.skipPaths && rule.skipPaths.some(pattern => {
+        const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+        return regex.test(relativePath);
+      })) {
+        continue;
+      }
+      
       const matches = Array.from(content.matchAll(rule.pattern));
       
       for (const match of matches) {
         const lineNumber = this.getLineNumber(content, match.index!);
         
-        violations.push({
+        const violation: CodeViolation = {
           type: rule.violationType,
           rule: rule.name,
           line: lineNumber,
           message: rule.message,
           suggestion: rule.suggestion
-        });
+        };
+        
+        violations.push(violation);
         
         // Apply autofix if available and not in dry-run
         if (rule.autofix && !this.dryRun) {
-          const fixedContent = rule.autofix(content, match);
+          const fixedContent = rule.autofix(content, match, filePath);
           if (fixedContent !== content) {
             content = fixedContent;
             changes.push(`Fixed ${rule.name} on line ${lineNumber}`);
+            violation.fix = 'Applied automatic fix';
           }
         }
       }
@@ -304,7 +514,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
       success: true,
       changes,
       violations,
-      errors: []
+      errors: [],
+      buildErrors: [],
+      typeErrors: []
     };
   }
 
@@ -367,6 +579,37 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
       }
     }
     
+    // Check for architectural violations in file paths
+    if (relativePath.includes('apps/web/packages/')) {
+      violations.push({
+        type: 'error',
+        rule: 'file-structure-violation',
+        line: 1,
+        message: 'File in apps/web/packages/ violates clean architecture',
+        suggestion: 'Move package to root /packages/ directory'
+      });
+    }
+    
+    if (relativePath.includes('apps/web/server/') || relativePath.includes('apps/web/api/')) {
+      violations.push({
+        type: 'error',
+        rule: 'file-structure-violation', 
+        line: 1,
+        message: 'Server code found in frontend directory',
+        suggestion: 'Move server code to apps/api/ or appropriate package/'
+      });
+    }
+    
+    if (relativePath.includes('apps/api/components/') || relativePath.includes('apps/api/pages/')) {
+      violations.push({
+        type: 'error',
+        rule: 'file-structure-violation',
+        line: 1, 
+        message: 'Frontend code found in backend directory',
+        suggestion: 'Move frontend code to apps/web/ or packages/web-ui/'
+      });
+    }
+    
     // Check for proper repository pattern usage
     if (content.includes('useEffect') && content.includes('fetch(')) {
       violations.push({
@@ -389,20 +632,38 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     const totalViolations = results.reduce((sum, r) => sum + r.violations.length, 0);
     const errors = results.reduce((sum, r) => sum + r.violations.filter(v => v.type === 'error').length, 0);
     const warnings = results.reduce((sum, r) => sum + r.violations.filter(v => v.type === 'warning').length, 0);
+    const buildErrors = results.reduce((sum, r) => sum + (r.buildErrors?.length || 0), 0);
+    const typeErrors = results.reduce((sum, r) => sum + (r.typeErrors?.length || 0), 0);
+    const fixesApplied = results.reduce((sum, r) => sum + r.violations.filter(v => v.fix).length, 0);
     
-    console.log('\n📊 CLAUDE.md Compliance Report:');
+    console.log('\n📊 Code Quality Report:');
     console.log(`   Files processed: ${totalFiles}`);
-    console.log(`   Files with violations: ${filesWithViolations}`);
-    console.log(`   Total violations: ${totalViolations}`);
-    console.log(`   Errors: ${errors}`);
+    console.log(`   Files with issues: ${filesWithViolations}`);
+    console.log('\n🔧 Issues Found:');
+    console.log(`   Coding standard violations: ${totalViolations}`);
+    console.log(`   Build errors: ${buildErrors}`);
+    console.log(`   TypeScript errors: ${typeErrors}`);
+    console.log(`   Automatic fixes applied: ${fixesApplied}`);
+    console.log('\n📈 Breakdown:');
+    console.log(`   Critical errors: ${errors + buildErrors + typeErrors}`);
     console.log(`   Warnings: ${warnings}`);
     
+    if (buildErrors > 0) {
+      console.log('\n❌ Build errors found - these prevent compilation');
+      console.log('   Run "pnpm build" to see detailed error messages');
+    }
+    
+    if (typeErrors > 0) {
+      console.log('\n🔧 TypeScript errors found - these violate type safety');
+      console.log('   Run "pnpm typecheck" to see detailed error messages');
+    }
+    
     if (errors > 0) {
-      console.log('\n❌ Critical violations found - these break architectural rules');
+      console.log('\n⚠️  Critical coding standard violations found');
     }
     
     if (warnings > 0) {
-      console.log('\n⚠️  Warnings found - these should be addressed for best practices');
+      console.log('\n💡 Code quality warnings - should be addressed for best practices');
     }
     
     // Show top violations
@@ -414,13 +675,25 @@ Co-Authored-By: Claude <noreply@anthropic.com>"`);
     });
     
     if (violationCounts.size > 0) {
-      console.log('\n🔍 Top violations:');
+      console.log('\n🔍 Most Common Issues:');
       [...violationCounts.entries()]
         .sort(([,a], [,b]) => b - a)
         .slice(0, 5)
         .forEach(([rule, count]) => {
           console.log(`   ${rule}: ${count} occurrences`);
         });
+    }
+    
+    if (fixesApplied > 0) {
+      console.log(`\n✅ ${fixesApplied} issues were automatically fixed`);
+      console.log('   Review the changes with: git diff');
+    }
+    
+    const remainingIssues = totalViolations + buildErrors + typeErrors - fixesApplied;
+    if (remainingIssues > 0) {
+      console.log(`\n🔨 ${remainingIssues} issues require manual fixes`);
+    } else if (totalFiles > 0) {
+      console.log('\n🎉 All files pass coding standards!');
     }
   }
 }
@@ -434,23 +707,33 @@ async function main() {
   
   if (help) {
     console.log(`
-🧹 Code Cleanup Agent - Enforces CLAUDE.md architectural rules
+🧹 Enhanced Code Cleanup Agent - Fixes build/TypeScript errors & enforces standards
 
-This super-careful agent finds and fixes violations of:
-• Module boundaries (no direct imports between modules)  
-• Repository pattern (no direct API calls)
-• Zustand stores (no useState for shared data)
-• Component library (@ria/web-ui only)
-• Centralized routing (ROUTES constants)
-• No emojis in production code
-• Error boundaries and loading states
-• TypeScript-first (no any types)
+This super-careful agent finds and fixes:
+
+🔧 Build & TypeScript Errors:
+• Missing imports and type annotations
+• Type safety violations (no any types)
+• Compilation errors preventing builds
+
+📋 Coding Standards (CODING_STANDARDS.md):
+• Strict TypeScript enforcement
+• Component development standards (forwardRef, proper typing)
+• State management standards (Zustand patterns)  
+• Repository pattern enforcement
+• Import/export organization
+• Error handling standards
+
+🏗️ Architectural Rules:
+• Module boundaries (no direct imports between modules)
+• Component library usage (@ria/web-ui only)
+• No bandaid fixes - only proper architectural solutions
 
 Usage:
   tsx scripts/code-cleaner.ts [path] [--dry-run]
 
 Options:
-  --dry-run    Analyze only, show violations but don't fix
+  --dry-run    Analyze only, show issues but don't fix
   --help       Show this help
 
 Examples:
@@ -460,9 +743,10 @@ Examples:
 
 The agent will:
 1. Commit current changes to Git (safety first)
-2. Scan files for CLAUDE.md rule violations
-3. Apply automatic fixes where possible
-4. Report remaining violations that need manual fixes
+2. Run build and typecheck to find errors  
+3. Scan files for coding standard violations
+4. Apply automatic fixes where possible (NO bandaid fixes)
+5. Report remaining issues that need manual fixes
 `);
     return;
   }

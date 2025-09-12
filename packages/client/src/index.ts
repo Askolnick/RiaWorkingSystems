@@ -38,7 +38,7 @@ export { useReportsStore } from './stores/reports.store';
 export { useBankReconciliationStore } from './stores/bank-reconciliation.store';
 export { useMultiCurrencyStore } from './stores/multi-currency.store';
 export { useRecurringTransactionsStore } from './stores/recurring-transactions.store';
-export { useReceiptManagerStore } from './stores/receipt-manager.store';
+export { useReceiptsStore } from './stores/receipts.store';
 export { useTemplatesStore } from './stores/templates.store';
 export { useBalanceSheetStore } from './stores/balance-sheet.store';
 export { useIncomeStatementStore } from './stores/income-statement.store';

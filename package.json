@@ -7,7 +7,13 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "arch": "npx tsx tools/architecture-agent.ts",
+    "arch:health": "npx tsx tools/architecture-agent.ts architecture-health",
+    "arch:validate": "npx tsx tools/architecture-agent.ts validate-architecture",
+    "arch:domains": "npx tsx tools/architecture-agent.ts validate-domains",
+    "arch:init": "npx tsx tools/architecture-agent.ts init-domains",
+    "arch:consolidate": "npx tsx tools/architecture-agent.ts consolidate-domain"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
@@ -16,7 +22,9 @@
     "jest": "^30.1.3",
     "jest-environment-jsdom": "^30.1.2",
     "tsx": "^4.7.0",
-    "turbo": "latest"
+    "turbo": "latest",
+    "glob": "^10.3.10",
+    "@types/glob": "^8.1.0"
   },
   "dependencies": {
     "@types/bcryptjs": "^3.0.0",

@@ -1,1 +1,0 @@
-'use client';import React from 'react';export default function ThemeToggle(){const [dark,setDark]=React.useState(false);React.useEffect(()=>{document.documentElement.classList.toggle('mode-dark',dark)},[dark]);return <button className='rounded-full bg-bg-2 border border-border px-3 h-9' onClick={()=>setDark(v=>!v)}>{dark?'Dark':'Light'}</button>}

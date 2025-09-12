@@ -1,37 +1,70 @@
 :root{
-  /* Base Colors - Light Mode */
-  --bg:#F7F4EE;
-  --bg-elev-1:#FBFAF7;
-  --bg-elev-2:#FFFFFF;
-  --bg-elev-3:#FDFCFA;
-  --text:#1A1C1F;
-  --text-muted:#4A4E57;
-  --text-subtle:#6B7280;
-  --border:#E3E0D7;
-  --border-hover:#D1CEC3;
-  --border-focus:#9CA3AF;
+  /* ===== BUOY-INSPIRED 8-COLOR THEME SYSTEM ===== */
   
-  /* Theme Colors */
-  --theme-h:210;
-  --theme-s:70%;
-  --theme-l:45%;
-  --theme:hsl(var(--theme-h) var(--theme-s) var(--theme-l));
-  --theme-hover:hsl(var(--theme-h) var(--theme-s) calc(var(--theme-l) - 5%));
-  --theme-active:hsl(var(--theme-h) var(--theme-s) calc(var(--theme-l) - 10%));
-  --theme-subtle:hsl(var(--theme-h) calc(var(--theme-s) - 30%) calc(var(--theme-l) + 35%));
-  --secondary:hsl(calc(var(--theme-h) + 180) var(--theme-s) var(--theme-l));
-  --inactive:hsl(var(--theme-h) calc(var(--theme-s) - 35%) calc(var(--theme-l) + 15%));
+  /* 1. Theme - Primary brand color (user customizable) */
+  --theme: #5B718C;
+  
+  /* 2. Action - Darker variant for interactive elements */
+  --action: #4A5F7A;
+  
+  /* 3. Inaction - Lighter/disabled variant */
+  --inaction: #8B9BB0;
+  
+  /* 4. Background - Light/dark mode dependent */
+  --background: #FFF4D8;
+  
+  /* 5. Attention - Error/warning states */
+  --attention: #dc2626;
+  
+  /* 6-8. Context-specific variants (inherit from main theme by default) */
+  --lifeboatcolor: var(--theme);
+  --lifeboataction: var(--action);
+  --lifeboatinaction: var(--inaction);
+  
+  /* ===== OVERLAY SYSTEM ===== */
+  /* IMPORTANT: Only 75% opacity allowed in entire app */
+  --overlay-opacity: 0.75;
+  
+  /* ===== LEGACY COMPATIBILITY (will be removed) ===== */
+  /* Map old tokens to new 8-color system */
+  --bg: var(--background);
+  --bg-elev-1: var(--background);
+  --bg-elev-2: var(--background);
+  --bg-elev-3: var(--background);
+  --text: var(--theme);
+  --text-muted: var(--inaction);
+  --text-subtle: var(--inaction);
+  --border: var(--theme);
+  --border-hover: var(--action);
+  --border-focus: var(--action);
+  
+  /* Legacy theme mappings */
+  --theme-h: 210;
+  --theme-s: 70%;
+  --theme-l: 45%;
+  --theme-hover: var(--action);
+  --theme-active: var(--action);
+  --theme-subtle: var(--inaction);
+  --secondary: var(--action);
+  --inactive: var(--inaction);
   
   /* Status Colors */
-  --attention:#D33030;
   --success:#059669;
   --warning:#D97706;
   --info:#0284C7;
   
-  /* Design Tokens */
-  --radius:16px;
-  --radius-sm:8px;
-  --radius-lg:24px;
+  /* ===== BUOY-INSPIRED DESIGN TOKENS ===== */
+  
+  /* Apple-style Radius System */
+  --radius-small:8px;      /* Small buttons, badges */
+  --radius-medium:14px;    /* Form inputs, regular buttons */
+  --radius-large:24px;     /* Cards, panels, modals */
+  --radius-pill:9999px;    /* Pill shapes */
+  --radius:var(--radius-large); /* Default to large for cards */
+  
+  /* Legacy radius mappings */
+  --radius-sm:var(--radius-small);
+  --radius-lg:var(--radius-large);
   --shadow-sm:0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-lg:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -58,6 +91,452 @@
   --space-10:2.5rem;
   --space-12:3rem;
   --space-16:4rem;
+}
+
+/* ========================================
+   SEMANTIC FONT CLASSES (5 Total)
+   ======================================== */
+
+/* User customizable fonts and accessibility settings */
+:root {
+  --header-font-family: "Radio Canada", sans-serif;
+  --body-font-family: "Quicksand", sans-serif;
+  
+  /* User-customizable scaling (50% to 150%) */
+  --user-font-scale: 1; /* Can be adjusted by user preference */
+  --user-spacing-scale: 1; /* Can be adjusted by user preference */
+  --user-radius-scale: 1; /* Can be adjusted by user preference */
+  
+  /* Base sizes at 100% scale - designed for accessibility */
+  --large-heading-size: calc(30px * var(--user-font-scale));
+  --medium-heading-size: calc(24px * var(--user-font-scale));
+  --small-heading-size: calc(18px * var(--user-font-scale));
+  --body-size: calc(16px * var(--user-font-scale)); /* Minimum 16px for accessibility */
+  --small-body-size: calc(14px * var(--user-font-scale)); /* Minimum 14px for accessibility */
+  
+  /* Line heights for optimal readability */
+  --heading-line-height: 1.2;
+  --subheading-line-height: 1.3;
+  --body-line-height: 1.5; /* WCAG recommended 1.5 for body text */
+  
+  /* Accessible spacing system */
+  --component-spacing-xs: calc(4px * var(--user-spacing-scale));
+  --component-spacing-sm: calc(8px * var(--user-spacing-scale));
+  --component-spacing-md: calc(16px * var(--user-spacing-scale));
+  --component-spacing-lg: calc(24px * var(--user-spacing-scale));
+  --component-spacing-xl: calc(32px * var(--user-spacing-scale));
+  
+  /* Touch-friendly minimum sizes (44px minimum for touch targets) */
+  --touch-target-min: 44px;
+  --button-min-height: calc(var(--touch-target-min) * var(--user-spacing-scale));
+  --input-min-height: calc(var(--touch-target-min) * var(--user-spacing-scale));
+  
+  /* Scalable radius system */
+  --radius-small-scaled: calc(var(--radius-small) * var(--user-radius-scale));
+  --radius-medium-scaled: calc(var(--radius-medium) * var(--user-radius-scale));
+  --radius-large-scaled: calc(var(--radius-large) * var(--user-radius-scale));
+  --radius-pill-scaled: var(--radius-pill); /* Pills don't scale */
+}
+
+/* 1. Large Heading - Major page titles, hero text */
+.large-heading {
+  font-family: var(--header-font-family);
+  font-size: var(--large-heading-size);
+  font-weight: 700;
+  line-height: var(--heading-line-height);
+  letter-spacing: -0.02em;
+  color: var(--theme);
+}
+
+/* 2. Medium Heading - Section headers, modal titles */
+.medium-heading {
+  font-family: var(--header-font-family);
+  font-size: var(--medium-heading-size);
+  font-weight: 600;
+  line-height: var(--subheading-line-height);
+  letter-spacing: -0.01em;
+  color: var(--theme);
+}
+
+/* 3. Small Heading - Card titles, subsection headers */
+.small-heading {
+  font-family: var(--header-font-family);
+  font-size: var(--small-heading-size);
+  font-weight: 500;
+  line-height: var(--subheading-line-height);
+  color: var(--theme);
+}
+
+/* 4. Body - Standard paragraph text, descriptions */
+.body {
+  font-family: var(--body-font-family);
+  font-size: var(--body-size);
+  font-weight: 400;
+  line-height: var(--body-line-height);
+  color: var(--theme);
+}
+
+/* 5. Small Body - Labels, captions, helper text */
+.small-body {
+  font-family: var(--body-font-family);
+  font-size: var(--small-body-size);
+  font-weight: 400;
+  line-height: var(--body-line-height);
+  color: var(--theme);
+  opacity: 0.9;
+}
+
+/* ========================================
+   BUTTON SYSTEM (3-Button Pattern)
+   ======================================== */
+
+/* Base button styles - accessible and touch-friendly */
+.btn-base {
+  min-height: var(--button-min-height);
+  border-radius: var(--radius-medium-scaled);
+  padding: var(--component-spacing-sm) var(--component-spacing-lg);
+  font-family: var(--body-font-family);
+  font-size: var(--body-size);
+  font-weight: 500;
+  line-height: var(--subheading-line-height);
+  transition: var(--transition);
+  cursor: pointer;
+  border: 2px solid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--component-spacing-xs);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* Focus styles for accessibility */
+.btn-base:focus-visible {
+  outline: 2px solid var(--theme);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  @extend .btn-base;
+  background: var(--theme);
+  color: var(--background);
+  border-color: var(--theme);
+}
+
+.btn-primary:hover {
+  background: var(--action);
+  border-color: var(--action);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  @extend .btn-base;
+  background: transparent;
+  color: var(--theme);
+  border-color: var(--theme);
+}
+
+.btn-secondary:hover {
+  background: var(--theme);
+  color: var(--background);
+}
+
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+
+.btn-tertiary {
+  @extend .btn-base;
+  background: var(--background);
+  color: var(--theme);
+  border-color: transparent;
+}
+
+.btn-tertiary:hover {
+  border-color: var(--theme);
+}
+
+.btn-tertiary:active {
+  transform: translateY(1px);
+}
+
+/* Button size variants */
+.btn-sm {
+  min-height: calc(var(--button-min-height) * 0.8);
+  padding: var(--component-spacing-xs) var(--component-spacing-md);
+  font-size: var(--small-body-size);
+}
+
+.btn-lg {
+  min-height: calc(var(--button-min-height) * 1.2);
+  padding: var(--component-spacing-md) var(--component-spacing-xl);
+  font-size: var(--small-heading-size);
+}
+
+/* ========================================
+   FORM SYSTEM
+   ======================================== */
+
+/* Accessible form system */
+.form-input,
+.form-textarea,
+.form-select {
+  background: var(--background);
+  border: 2px solid var(--inaction);
+  border-radius: var(--radius-medium-scaled);
+  padding: var(--component-spacing-sm) var(--component-spacing-md);
+  font-family: var(--body-font-family);
+  font-size: var(--body-size);
+  color: var(--theme);
+  transition: var(--transition);
+  width: 100%;
+  min-height: var(--input-min-height);
+  box-sizing: border-box;
+  line-height: var(--body-line-height);
+}
+
+/* Focus styles for accessibility */
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--theme);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme) 20%, transparent);
+}
+
+/* Error state */
+.form-input:invalid,
+.form-input[aria-invalid="true"],
+.form-textarea:invalid,
+.form-textarea[aria-invalid="true"],
+.form-select:invalid,
+.form-select[aria-invalid="true"] {
+  border-color: var(--attention);
+}
+
+.form-input:invalid:focus,
+.form-input[aria-invalid="true"]:focus,
+.form-textarea:invalid:focus,
+.form-textarea[aria-invalid="true"]:focus,
+.form-select:invalid:focus,
+.form-select[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--attention) 20%, transparent);
+}
+
+/* Placeholder styling */
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--inaction);
+  opacity: 0.8;
+}
+
+/* Disabled state */
+.form-input:disabled,
+.form-textarea:disabled,
+.form-select:disabled {
+  background: color-mix(in srgb, var(--inaction) 10%, transparent);
+  color: var(--inaction);
+  cursor: not-allowed;
+}
+
+.form-label {
+  font-family: var(--body-font-family);
+  font-size: var(--body-size);
+  font-weight: 500;
+  color: var(--theme);
+  margin-bottom: var(--component-spacing-xs);
+  display: block;
+  line-height: var(--subheading-line-height);
+}
+
+/* Required indicator */
+.form-label[aria-required="true"]::after,
+.form-label.required::after {
+  content: " *";
+  color: var(--attention);
+}
+
+.form-error {
+  font-family: var(--body-font-family);
+  font-size: var(--small-body-size);
+  color: var(--attention);
+  margin-top: var(--component-spacing-xs);
+  line-height: var(--body-line-height);
+  display: block;
+}
+
+.form-help-text {
+  font-family: var(--body-font-family);
+  font-size: var(--small-body-size);
+  color: var(--inaction);
+  margin-top: var(--component-spacing-xs);
+  line-height: var(--body-line-height);
+}
+
+.form-group {
+  margin-bottom: var(--component-spacing-lg);
+}
+
+/* Textarea specific styling */
+.form-textarea {
+  min-height: calc(var(--input-min-height) * 2);
+  resize: vertical;
+}
+
+/* ========================================
+   SQUIRCLE SYSTEM (Apple-style Radius)
+   ======================================== */
+
+.squircle-small { border-radius: var(--radius-small-scaled); }
+.squircle-medium { border-radius: var(--radius-medium-scaled); }
+.squircle-large { border-radius: var(--radius-large-scaled); }
+.squircle-pill { border-radius: var(--radius-pill-scaled); }
+
+/* ========================================
+   ACCESSIBILITY UTILITIES
+   ======================================== */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus management */
+.focus-visible-only:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip links for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--theme);
+  color: var(--background);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: var(--radius-small-scaled);
+  font-weight: 500;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --theme: #000000;
+    --background: #ffffff;
+    --action: #0000ff;
+    --attention: #ff0000;
+    --inaction: #666666;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* User preference scaling utilities */
+.user-scale-50 { --user-font-scale: 0.5; --user-spacing-scale: 0.5; --user-radius-scale: 0.5; }
+.user-scale-75 { --user-font-scale: 0.75; --user-spacing-scale: 0.75; --user-radius-scale: 0.75; }
+.user-scale-100 { --user-font-scale: 1; --user-spacing-scale: 1; --user-radius-scale: 1; }
+.user-scale-125 { --user-font-scale: 1.25; --user-spacing-scale: 1.25; --user-radius-scale: 1.25; }
+.user-scale-150 { --user-font-scale: 1.5; --user-spacing-scale: 1.5; --user-radius-scale: 1.5; }
+
+/* ========================================
+   COLOR UTILITIES
+   ======================================== */
+
+/* Theme color utilities with opacity variants */
+.bg-theme { background-color: var(--theme); }
+.bg-action { background-color: var(--action); }
+.bg-inaction { background-color: var(--inaction); }
+.bg-background { background-color: var(--background); }
+.bg-attention { background-color: var(--attention); }
+
+/* Text color utilities */
+.text-theme { color: var(--theme); }
+.text-action { color: var(--action); }
+.text-inaction { color: var(--inaction); }
+.text-background { color: var(--background); }
+.text-attention { color: var(--attention); }
+
+/* Border color utilities */
+.border-theme { border-color: var(--theme); }
+.border-action { border-color: var(--action); }
+.border-inaction { border-color: var(--inaction); }
+.border-background { border-color: var(--background); }
+.border-attention { border-color: var(--attention); }
+
+/* Opacity utilities following 75% overlay standard */
+.bg-theme-5 { background-color: color-mix(in srgb, var(--theme) 5%, transparent); }
+.bg-theme-10 { background-color: color-mix(in srgb, var(--theme) 10%, transparent); }
+.bg-theme-75 { background-color: color-mix(in srgb, var(--theme) 75%, transparent); }
+.bg-action-5 { background-color: color-mix(in srgb, var(--action) 5%, transparent); }
+.bg-action-10 { background-color: color-mix(in srgb, var(--action) 10%, transparent); }
+.bg-action-75 { background-color: color-mix(in srgb, var(--action) 75%, transparent); }
+.bg-attention-10 { background-color: color-mix(in srgb, var(--attention) 10%, transparent); }
+.bg-attention-75 { background-color: color-mix(in srgb, var(--attention) 75%, transparent); }
+
+/* Text opacity utilities */
+.text-theme-70 { color: color-mix(in srgb, var(--theme) 70%, transparent); }
+.text-theme-50 { color: color-mix(in srgb, var(--theme) 50%, transparent); }
+
+/* ========================================
+   RESPONSIVE FONT SCALING
+   ======================================== */
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  :root {
+    /* Slightly reduce sizes on mobile for better fit */
+    --large-heading-size: calc(26px * var(--user-font-scale));
+    --medium-heading-size: calc(22px * var(--user-font-scale));
+    --small-heading-size: calc(17px * var(--user-font-scale));
+    --body-size: calc(15px * var(--user-font-scale));
+    --small-body-size: calc(13px * var(--user-font-scale));
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    --large-heading-size: calc(28px * var(--user-font-scale));
+    --medium-heading-size: calc(23px * var(--user-font-scale));
+  }
+}
+
+/* Large screen adjustments */
+@media (min-width: 1441px) {
+  :root {
+    --large-heading-size: calc(32px * var(--user-font-scale));
+    --medium-heading-size: calc(26px * var(--user-font-scale));
+    --small-heading-size: calc(19px * var(--user-font-scale));
+    --body-size: calc(17px * var(--user-font-scale));
+    --small-body-size: calc(15px * var(--user-font-scale));
+  }
 }
 
 :root.mode-dark{
