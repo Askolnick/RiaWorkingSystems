@@ -417,13 +417,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"\`);
 
 
 
-// Updated by Tool Builder on 2025-09-12T08:51:26.736Z
-// New capability: --dry-run tool for .
-// Based on samples: scripts/tool-builder.ts, scripts/refactor-agent.ts, scripts/component-dedup-agent.ts, scripts/check-users.ts, packages/db/index.ts
-
-
-
-// Updated by Tool Builder on 2025-09-12T08:51:31.594Z
+// Updated by Tool Builder on 2025-09-12T08:51:58.839Z
 // New capability: --dry-run tool for .
 // Based on samples: scripts/tool-builder.ts, scripts/refactor-agent.ts, scripts/component-dedup-agent.ts, scripts/check-users.ts, packages/db/index.ts
 
