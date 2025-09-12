@@ -1,3 +1,13 @@
+// REFACTOR SUGGESTION: Consider extracting the following utilities:
+// - getStatusBadgeVariant (utility, 59 lines)
+// - formatCurrency (utility, 18 lines)
+// - formatDate (utility, 10 lines)
+// - getDaysOverdue (utility, 11 lines)
+// - handleExportAgingReport (utility, 20 lines)
+// - types (type, 41 lines)
+
+// Original file preserved to prevent breaking changes
+
 'use client';
 
 import { useEffect, useState } from 'react';

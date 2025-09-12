@@ -366,17 +366,15 @@ class IntegrationAgent {
   private async createIntegrationSteps(module: IntegrationModule): Promise<IntegrationStep[]> {
     const steps: IntegrationStep[] = [];
     
-    // Step 1: Backup existing files that might conflict
-    if (module.conflicts.length > 0) {
-      steps.push({
-        type: 'copy',
-        source: '',
-        target: `backup/${module.name}-${Date.now()}`,
-        description: 'Backup conflicting files before integration',
-        validation: ['files exist in backup location'],
-        conflicts: []
-      });
-    }
+    // Step 1: Create git tag before integration
+    steps.push({
+      type: 'validate',
+      source: '',
+      target: 'git repository',
+      description: `Create git tag before integrating ${module.name}`,
+      validation: ['git tag created successfully'],
+      conflicts: []
+    });
     
     // Step 2: Install dependencies
     if (module.dependencies.length > 0) {
@@ -418,6 +416,16 @@ class IntegrationAgent {
         'Tests pass',
         'Development server starts'
       ],
+      conflicts: []
+    });
+
+    // Step 5: Commit integration to git
+    steps.push({
+      type: 'validate',
+      source: '',
+      target: 'git repository',
+      description: `Commit ${module.name} integration to git`,
+      validation: ['integration committed and tagged'],
       conflicts: []
     });
     
@@ -535,11 +543,11 @@ class IntegrationAgent {
 
   private createRollbackSteps(module: IntegrationModule): string[] {
     return [
-      'Restore backup files',
-      'Revert package.json changes', 
-      'Remove copied files',
-      'Rollback database migrations',
-      'Clear cache and rebuild'
+      'git reset --hard <pre-integration-tag>',
+      'git push --force-with-lease',
+      'Remove integration git tag',
+      'Clear cache and rebuild',
+      'Verify system state'
     ];
   }
 
@@ -630,11 +638,7 @@ class IntegrationAgent {
           try {
             await fs.access(step.target);
             result.conflicts.push(`File already exists: ${step.target}`);
-            
-            // Create backup
-            const backupPath = `${step.target}.backup-${Date.now()}`;
-            await fs.copyFile(step.target, backupPath);
-            result.warnings.push(`Created backup: ${backupPath}`);
+            result.warnings.push(`Will overwrite: ${step.target}`);
           } catch {
             // File doesn't exist, proceed
           }
@@ -680,6 +684,47 @@ class IntegrationAgent {
 
   private async runValidation(validation: string): Promise<void> {
     switch (validation) {
+      case 'git tag created successfully':
+        try {
+          // Create git tag with timestamp
+          const tagName = `pre-integration-${Date.now()}`;
+          execSync(`git tag ${tagName}`, { stdio: 'pipe', cwd: this.basePath });
+          execSync(`git push origin ${tagName}`, { stdio: 'pipe', cwd: this.basePath });
+          console.log(`   📌 Created git tag: ${tagName}`);
+        } catch (error) {
+          throw new Error(`Failed to create git tag: ${error.message}`);
+        }
+        break;
+        
+      case 'integration committed and tagged':
+        try {
+          // Add all changes
+          execSync('git add .', { stdio: 'pipe', cwd: this.basePath });
+          
+          // Create commit message with details
+          const commitMessage = `🤖 Integration Agent: Add email module integration
+
+- Email UI components (MessageList, ThreadView, Composer)
+- JMAP protocol adapter with fetch client  
+- E2EE integration stubs with OpenPGP.js
+- Campaign adapters for Listmonk/Mautic
+- Cross-reference linking model for tasks/projects
+
+🎯 Generated with Integration Agent`;
+          
+          execSync(`git commit -m "${commitMessage}"`, { stdio: 'pipe', cwd: this.basePath });
+          
+          // Create integration success tag
+          const tagName = `integration-email-${Date.now()}`;
+          execSync(`git tag ${tagName}`, { stdio: 'pipe', cwd: this.basePath });
+          execSync(`git push origin main --tags`, { stdio: 'pipe', cwd: this.basePath });
+          
+          console.log(`   ✅ Committed integration and tagged: ${tagName}`);
+        } catch (error) {
+          throw new Error(`Failed to commit integration: ${error.message}`);
+        }
+        break;
+        
       case 'TypeScript compilation succeeds':
         try {
           execSync('npx tsc --noEmit', { stdio: 'pipe', cwd: this.basePath });
