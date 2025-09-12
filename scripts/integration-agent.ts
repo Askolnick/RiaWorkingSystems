@@ -818,32 +818,37 @@ OPTIONS:
   --dry-run, -d     Show integration plan without executing
   --module, -m      Integrate specific module only
   --phase, -p       Execute specific integration phase
-  --backup, -b      Create backup before integration
   --help, -h        Show this help message
 
 EXAMPLES:
   npx tsx scripts/integration-agent.ts                    # Full integration
   npx tsx scripts/integration-agent.ts --dry-run          # Show plan only  
   npx tsx scripts/integration-agent.ts --module email     # Integrate email module only
-  npx tsx scripts/integration-agent.ts --backup           # Create backup first
 
 INTEGRATION PHASES:
   1. High Priority: tasks-upgrades-v2, portal-builder, email-module, omni-inbox
   2. Medium Priority: tasks-api-dnd, messaging-mvp
   3. Low Priority: inventory-store-hub, core-hubs-bundle
 
-The agent follows CLAUDE.md architectural rules and maintains clean architecture patterns.
+The agent uses git tagging for version control instead of manual backups.
     `);
     return;
   }
   
   const agent = new IntegrationAgent();
   
+  // Get module name if specified
+  let targetModule: string | undefined;
+  const moduleIndex = args.findIndex(arg => arg === '--module' || arg === '-m');
+  if (moduleIndex !== -1 && args[moduleIndex + 1]) {
+    targetModule = args[moduleIndex + 1];
+  }
+  
   if (args.includes('--dry-run') || args.includes('-d')) {
     console.log('🔍 Dry run mode - analyzing integration plan...\n');
     // TODO: Implement dry run mode
   } else {
-    await agent.run();
+    await agent.run(targetModule);
   }
 }
 
