@@ -1,64 +1,55 @@
-export interface MessageTemplate {
+export type MailAddress = { name?: string; email: string };
+export type MailMessage = {
+  id: string;                // JMAP id
+  messageId: string;         // RFC 5322 Message-ID
+  threadId: string;
+  subject: string;
+  from: MailAddress[];
+  to: MailAddress[];
+  cc?: MailAddress[];
+  date: string;
+  preview?: string;
+  html?: string;
+  text?: string;
+  attachments?: { id: string; name: string; size: number; mime: string }[];
+  flags?: { seen?: boolean; flagged?: boolean; encrypted?: boolean; signed?: boolean };
+};
+
+export type MailThread = {
   id: string;
-  tenantId: string;
-  name: string;
   subject: string;
-  content: string;
-  templateType: MessageTemplateType;
-  variables: TemplateVariable[];
-  category?: string;
-  tags: string[];
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
+  messages: MailMessage[];
+};
 
-export type MessageTemplateType = 'email' | 'sms' | 'push' | 'in-app';
+export type MailFolder = { id: string; name: string; role?: "inbox"|"sent"|"drafts"|"trash"|"archive" };
 
-export interface TemplateVariable {
-  key: string;
-  name: string;
-  description?: string;
-  defaultValue?: string;
-  required: boolean;
-  type: 'text' | 'number' | 'date' | 'boolean' | 'array';
-}
+export type MailLink = { messageId: string; type: "task"|"project"|"order"|"inventory"; refId: string; quote?: string; createdBy: string; createdAt: number };
 
-export interface CreateMessageTemplateData {
-  name: string;
-  subject: string;
-  content: string;
-  templateType: MessageTemplateType;
-  variables: TemplateVariable[];
-  category?: string;
-  tags: string[];
-}
+export type AuthAdapter = {
+  getAuthHeaders: () => Promise<Record<string,string>>;
+};
 
-export interface UpdateMessageTemplateData extends Partial<CreateMessageTemplateData> {
-  isActive?: boolean;
-}
+export type DataAdapter = {
+  createTaskFromEmail: (msg: MailMessage, init?: { assigneeId?: string; due?: string; quote?: string }) => Promise<{ taskId: string }>;
+  createLink: (link: MailLink) => Promise<void>;
+  findLinksForMessage: (messageId: string) => Promise<MailLink[]>;
+  searchPeopleOrgs: (q: string) => Promise<{ id: string; name: string; type: "person"|"org" }[]>;
+};
 
-export interface TemplatePreviewData {
-  templateId: string;
-  variables: Record<string, any>;
-}
+export type CampaignAdapter = {
+  startCampaignFromSelection: (opts: { name: string; messageHtml: string; audienceIds: string[]; utm?: Record<string,string> }) => Promise<{ campaignId: string }>;
+};
 
-export interface TemplatePreviewResult {
-  subject: string;
-  content: string;
-  renderedAt: string;
-}
+export type JMAPClient = {
+  listMailboxes: () => Promise<MailFolder[]>;
+  listThreads: (opts: { mailboxId?: string; search?: string }) => Promise<MailThread[]>;
+  getThread: (threadId: string) => Promise<MailThread | null>;
+  send: (draft: ComposeDraft) => Promise<{ id: string }>;
+};
 
-export interface MessageTemplateFilters {
-  templateType?: MessageTemplateType;
-  category?: string;
-  tags?: string[];
-  isActive?: boolean;
-  search?: string;
-}
-
-export interface MessageTemplateSort {
-  field: keyof MessageTemplate;
-  direction: 'asc' | 'desc';
-}
+export type ComposeDraft = {
+  to: MailAddress[]; cc?: MailAddress[]; bcc?: MailAddress[];
+  subject: string; html?: string; text?: string;
+  attachments?: File[];
+  encrypt?: boolean; sign?: boolean;
+};
