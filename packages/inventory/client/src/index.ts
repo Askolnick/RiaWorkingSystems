@@ -1,1 +1,1 @@
-// inventory client exports
+export * from './types';
