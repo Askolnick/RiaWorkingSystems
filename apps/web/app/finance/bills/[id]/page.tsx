@@ -26,7 +26,7 @@ import { ROUTES } from '@ria/utils';
 import type { CreateBillPaymentData, PaymentMethod } from '@ria/bills-server';
 import { BILL_STATUSES, BILL_PRIORITIES, PAYMENT_METHODS, getBillStatusVariant, getPriorityVariant } from '@ria/bills-server';
 
-export default function BillDetailPage() {
+export default function BillDetailPage() : void {
   const params = useParams();
   const router = useRouter();
   const billId = params.id as string;
@@ -91,7 +91,7 @@ export default function BillDetailPage() {
         notes: ''
       });
     } catch (error) {
-      console.error('Payment failed:', error);
+      // // console.error('Payment failed:', error);
     }
   };
 

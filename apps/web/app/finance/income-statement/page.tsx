@@ -2,7 +2,7 @@
 
 import { Card, Button } from '@ria/web-ui';
 
-export default function IncomeStatementPage() {
+export default function IncomeStatementPage() : void {
   return (
     <div className="p-6">
       <div className="mb-6">

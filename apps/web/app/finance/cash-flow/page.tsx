@@ -22,7 +22,7 @@ import {
 } from '@ria/web-ui';
 import { ROUTES } from '@ria/utils';
 
-export default function CashFlowPage() {
+export default function CashFlowPage() : void {
   const {
     statements,
     loading,
@@ -89,7 +89,7 @@ export default function CashFlowPage() {
         currency: 'USD'
       });
     } catch (error) {
-      console.error('Failed to generate cash flow statement:', error);
+      // console.error('Failed to generate cash flow statement:', error);
     }
   };
 

@@ -1,4 +1,4 @@
-export default function FinanceExpensesPage() {
+export default function FinanceExpensesPage() : void {
   return (
     <div className="p-6">
       <h1 className="text-xl font-semibold mb-4">Expenses</h1>

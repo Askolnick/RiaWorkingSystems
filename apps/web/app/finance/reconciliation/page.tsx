@@ -25,7 +25,7 @@ import {
   EmptyState
 } from '@ria/web-ui';
 
-export default function ReconciliationPage() {
+export default function ReconciliationPage() : void {
   const {
     // State
     bankAccounts,

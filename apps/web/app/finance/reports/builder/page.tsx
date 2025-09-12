@@ -2,7 +2,7 @@
 
 import { Card, Button } from '@ria/web-ui';
 
-export default function ReportsBuilderPage() {
+export default function ReportsBuilderPage() : void {
   return (
     <div className="p-6">
       <div className="mb-6">

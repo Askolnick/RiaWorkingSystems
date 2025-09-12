@@ -2,7 +2,7 @@
 
 import { Card, Button } from '@ria/web-ui';
 
-export default function RecurringPage() {
+export default function RecurringPage() : void {
   return (
     <div className="p-6">
       <div className="mb-6">

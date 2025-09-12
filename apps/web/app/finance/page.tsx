@@ -17,7 +17,7 @@ import {
   ErrorBoundary,
 } from '@ria/web-ui';
 
-export default function FinancePage() {
+export default function FinancePage() : void {
   const router = useRouter();
   
   // Store hooks

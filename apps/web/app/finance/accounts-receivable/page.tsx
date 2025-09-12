@@ -78,7 +78,7 @@ interface AgingBucket {
   percentage: number;
 }
 
-export default function AccountsReceivablePage() {
+export default function AccountsReceivablePage() : void {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -218,7 +218,7 @@ export default function AccountsReceivablePage() {
       await createCustomerAccount(customerData);
       setShowNewCustomerModal(false);
     } catch (error) {
-      console.error('Failed to create customer:', error);
+      // // console.error('Failed to create customer:', error);
     }
   };
 

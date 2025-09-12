@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useReceiptsStore } from '@ria/client';
 
-export default function ReceiptsPage() {
+export default function ReceiptsPage() : void {
   const {
     receipts,
     statistics,
@@ -74,7 +74,7 @@ export default function ReceiptsPage() {
       setUploadModalOpen(false);
       setSelectedFile(null);
     } catch (error) {
-      console.error('Upload failed:', error);
+      // // console.error('Upload failed:', error);
     }
   };
 

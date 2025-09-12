@@ -465,7 +465,7 @@ class IntegrationAgent {
         target: targetPath,
         description: `Copy ${file} to ${targetPath}`,
         validation: ['file exists at target', 'imports resolve'],
-        conflicts: this.checkFileConflicts(targetPath)
+        conflicts: await this.checkFileConflicts(targetPath)
       });
     }
     
@@ -539,14 +539,13 @@ class IntegrationAgent {
     return path.join('packages', `${packageName}-client/src/`, sourceFile);
   }
 
-  private checkFileConflicts(targetPath: string): string[] {
+  private async checkFileConflicts(targetPath: string): Promise<string[]> {
     // Check if target file already exists and might conflict
     const conflicts: string[] = [];
     
     try {
-      if (fs.access(targetPath)) {
-        conflicts.push('file already exists');
-      }
+      await fs.access(targetPath);
+      conflicts.push('file already exists');
     } catch {
       // File doesn't exist, no conflict
     }

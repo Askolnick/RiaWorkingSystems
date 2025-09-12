@@ -15,7 +15,7 @@ import {
 } from '@ria/web-ui';
 import { formatCurrency, formatDate } from '@ria/reports-server';
 
-export default function AgingReportsPage() {
+export default function AgingReportsPage() : void {
   const {
     agingReceivables,
     agingPayables,

@@ -7,7 +7,7 @@ import { Card, Button, Badge, Input, Select, LoadingCard, Alert, ErrorBoundary }
 import { ROUTES } from '@ria/utils';
 import type { InvoiceStatus } from '@ria/invoices-server';
 
-export default function FinanceInvoicesPage() {
+export default function FinanceInvoicesPage() : void {
   const {
     invoices,
     loading,
@@ -80,7 +80,7 @@ export default function FinanceInvoicesPage() {
           break;
       }
     } catch (error) {
-      console.error('Invoice action failed:', error);
+      // console.error('Invoice action failed:', error);
     }
   };
 
