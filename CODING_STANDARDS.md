@@ -464,4 +464,233 @@ These standards are enforced through:
 4. **Phase 4**: Standardize store and repository patterns
 5. **Phase 5**: Add comprehensive testing
 
+## 11. Component vs CSS Class Decision Framework
+
+### When to Create React Components ✅
+
+**Interactive Elements:**
+```typescript
+// ✅ CORRECT - Has interactive logic
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ onClick, disabled, loading, children, ...props }, ref) => {
+    const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
+      if (!disabled && !loading) onClick?.(e);
+    };
+    
+    return (
+      <button 
+        ref={ref}
+        onClick={handleClick}
+        disabled={disabled || loading}
+        className={cn('btn-primary', { 'btn-loading': loading })}
+        {...props}
+      >
+        {loading ? <Spinner /> : children}
+      </button>
+    );
+  }
+);
+```
+
+**Complex Logic & State:**
+```typescript
+// ✅ CORRECT - Has internal state and complex logic
+export const SearchInput = ({ onSearch }: Props) => {
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const debouncedQuery = useDebounce(query, 300);
+  
+  useEffect(() => {
+    if (debouncedQuery) {
+      fetchSuggestions(debouncedQuery).then(setSuggestions);
+    }
+  }, [debouncedQuery]);
+  
+  return (
+    <div className="search-input-container">
+      <input value={query} onChange={(e) => setQuery(e.target.value)} />
+      {suggestions.length > 0 && <SuggestionsList suggestions={suggestions} />}
+    </div>
+  );
+};
+```
+
+**Reusable Interactive Patterns:**
+```typescript
+// ✅ CORRECT - Reusable pattern with behavior
+export const Modal = ({ isOpen, onClose, children }: Props) => {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+};
+```
+
+### When to Use CSS Classes Instead ❌
+
+**Text-Only Components:**
+```typescript
+// ❌ WRONG - Unnecessary React component
+export const Heading = ({ children }: { children: React.ReactNode }) => {
+  return <h2 className="large-heading">{children}</h2>;
+};
+
+// ✅ CORRECT - Just use the CSS class
+<h2 className="large-heading">My Title</h2>
+```
+
+**Simple Styling Wrappers:**
+```typescript
+// ❌ WRONG - Unnecessary wrapper component
+export const Container = ({ children }: { children: React.ReactNode }) => {
+  return <div className="max-w-4xl mx-auto px-4">{children}</div>;
+};
+
+// ✅ CORRECT - Use CSS class directly
+<div className="container">{content}</div>
+
+/* In CSS */
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+```
+
+**Static Content:**
+```typescript
+// ❌ WRONG - Component for static content
+export const WelcomeMessage = () => {
+  return <p className="welcome-text">Welcome to our application!</p>;
+};
+
+// ✅ CORRECT - Use constants and CSS
+const WELCOME_MESSAGE = "Welcome to our application!";
+<p className="welcome-text">{WELCOME_MESSAGE}</p>
+```
+
+**Simple Icon Wrappers:**
+```typescript
+// ❌ WRONG - Wrapper component for icons
+export const HomeIcon = () => {
+  return <HomeIcon className="w-5 h-5" />;
+};
+
+// ✅ CORRECT - Import and use directly
+import { HomeIcon } from '@heroicons/react/24/outline';
+<HomeIcon className="w-5 h-5" />
+```
+
+### Decision Tree
+
+```
+Need React Component?
+├─ Has interactive logic (onClick, onChange, etc.)? → YES, create component
+├─ Has internal state (useState, useEffect, etc.)? → YES, create component  
+├─ Needs ref forwarding? → YES, create component
+├─ Complex conditional rendering? → YES, create component
+├─ Reusable business logic? → YES, create component
+└─ Just styling or static content? → NO, use CSS class
+
+Examples of Interactive Logic:
+• Form validation
+• Click handlers with business logic
+• Keyboard navigation
+• Focus management  
+• Animation triggers
+• Data fetching
+• Conditional rendering based on props
+
+Examples of CSS Class Usage:
+• Typography styling (.large-heading, .body)
+• Layout utilities (.container, .grid, .flex)
+• Color utilities (.text-theme, .bg-background)
+• Spacing utilities (.p-4, .mb-2)
+• Static content display
+```
+
+### CSS Class Naming Conventions
+
+```css
+/* Semantic Typography */
+.large-heading { /* 30px, bold, theme color */ }
+.medium-heading { /* 24px, semi-bold, theme color */ }
+.small-heading { /* 18px, medium, theme color */ }
+.body { /* 16px, normal, theme color */ }
+.small-body { /* 14px, normal, theme color */ }
+
+/* Layout Utilities */
+.container { /* max-width, centered, padding */ }
+.grid-2 { /* 2-column grid */ }
+.flex-between { /* justify-between */ }
+.flex-center { /* center items */ }
+
+/* Component-Specific Classes */
+.btn-primary { /* Primary button styling */ }
+.form-input { /* Input field styling */ }
+.card { /* Card container styling */ }
+
+/* State Classes */
+.is-loading { /* Loading state */ }
+.is-active { /* Active state */ }
+.is-disabled { /* Disabled state */ }
+```
+
+### Anti-Patterns to Avoid
+
+```typescript
+// ❌ Component that only applies className
+const RedText = ({ children }) => <span className="text-red-500">{children}</span>;
+
+// ❌ Component for single HTML element
+const Paragraph = ({ children }) => <p className="body">{children}</p>;
+
+// ❌ Wrapper without logic
+const Section = ({ children }) => <section className="py-8">{children}</section>;
+
+// ❌ Static component
+const LoadingText = () => <div>Loading...</div>;
+
+// ❌ Simple icon wrapper  
+const CheckIcon = () => <CheckIcon className="w-4 h-4 text-green-500" />;
+```
+
+### Component Complexity Threshold
+
+**Create Component If:**
+- 3+ lines of logic OR
+- Has useState/useEffect OR
+- Needs props validation OR
+- Has event handlers OR
+- Conditional rendering OR
+- Will be reused with different behavior
+
+**Use CSS Class If:**
+- Pure styling OR
+- Static content OR  
+- Simple HTML wrapper OR
+- Typography variant OR
+- Layout utility
+
 Following these standards ensures the Ria Management Software remains maintainable, scalable, and free from build errors as it grows to a massive application.

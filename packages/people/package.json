@@ -1,0 +1,14 @@
+{
+  "name": "@ria/people",
+  "private": true,
+  "version": "0.0.0",
+  "main": "client/src/index.ts",
+  "exports": {
+    ".": "./client/src/index.ts",
+    "./server": "./server/src/index.ts",
+    "./types": "./types/src/index.ts"
+  },
+  "dependencies": {
+    "@ria/core": "workspace:*"
+  }
+}
