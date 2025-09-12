@@ -310,6 +310,15 @@ class CodeCleaner {
       violationType: 'warning',
       message: 'Components with only static content should be CSS classes or constants',
       suggestion: 'Use CSS classes for styling or constants for static content'
+    },
+
+    // Simplicity-first: Overly complex components
+    {
+      name: 'overly-complex-component',
+      pattern: /export\s+(?:const|function)\s+\w+[\s\S]*?\{[\s\S]*?(?:useState|useEffect|useCallback|useMemo|useRef)[\s\S]*?(?:useState|useEffect|useCallback|useMemo|useRef)[\s\S]*?(?:useState|useEffect|useCallback|useMemo|useRef)[\s\S]*?\}/g,
+      violationType: 'warning',
+      message: 'Component has too many hooks and complexity - consider breaking down',
+      suggestion: 'Split into smaller, focused components or extract custom hooks'
     }
   ];
 
