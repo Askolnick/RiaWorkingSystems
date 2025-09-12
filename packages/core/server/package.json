@@ -1,0 +1,14 @@
+{
+  "name": "@ria/core-server",
+  "version": "0.1.0",
+  "description": "Files client for RIA Management System",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
