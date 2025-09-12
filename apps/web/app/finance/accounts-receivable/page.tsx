@@ -20,13 +20,46 @@ import {
   Select 
 } from '@ria/web-ui';
 import { ROUTES } from '@ria/utils';
-import type { 
-  CustomerAccount, 
-  ARInvoice, 
-  ARPayment, 
-  CollectionCase,
-  AgingReport 
-} from '@ria/accounts-receivable-server';
+// Types - will be imported from @ria/accounts-receivable-server when available
+interface CustomerAccount {
+  id: string;
+  name: string;
+  email: string;
+  creditLimit: number;
+  currentBalance: number;
+  overdueBalance: number;
+}
+
+interface ARInvoice {
+  id: string;
+  customerId: string;
+  number: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+}
+
+interface ARPayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  paymentDate: string;
+  method: string;
+}
+
+interface CollectionCase {
+  id: string;
+  customerId: string;
+  status: string;
+  priority: string;
+  totalAmount: number;
+}
+
+interface AgingReport {
+  asOfDate: string;
+  buckets: AgingBucket[];
+  totalOutstanding: number;
+}
 
 interface AgingBucket {
   label: string;
